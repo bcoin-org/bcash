@@ -1,5 +1,56 @@
 # Bcoin Release Notes & Changelog
 
+## v1.x
+
+### Migration
+
+The chain indexing subsystem has been refactored to be more modular and
+flexible. A migration is required to cleanup the old indexes, if present.
+
+Indexing has been made extensible so that new indexers such as a filter index
+for BIP 157 can be implemented easily.
+
+Users can toggle any indexing on/off anytime before or after the initial sync.
+The indexer will start resyncing the chain state and replaying blocks to
+process them for indexing. Once caught up, it will just index new blocks.
+
+An index can be dropped by just deleting the corresponding database.
+
+### Notable Changes
+
+- `__lib/indexer__` `Indexer` implements the base methods which are common to
+  all indexers, including setting up the database, handling chain events such
+  as new block etc.
+
+- By default, bcoin ships `TXIndexer`, `AddrIndexer` implementations. These
+  indexers preserve all the existing indexing functionality and can be enabled
+  via the same flags i.e. `--index-tx` `--index-address`, for compatibility.
+
+- Database location can be configured via `--index-prefix` config option.
+  Default locations are `prefix` + `/index` e.g.: `~/.bcoin/testnet/index/tx`,
+  `~/.bcoin/testnet/index/addr`.
+
+- `__/lib/blockchain/chain__` - the following methods have been moved out of
+  the chain to the indexers:
+
+  `node.txindex` implements:
+
+  + `getMeta(hash)`
+  + `getTX(hash)`
+  + `hasTX(hash)`
+
+  `node.addrindex` implements:
+
+  + `getCoinsByAddress(addrs)`
+  + `getHashesByAddress(addrs)`
+  + `getTXByAddress(addrs)`
+  + `getMetaByAddress(addrs)`
+
+  Using these methods on the chain is deprecated.
+
+
+- `__/lib/blockchain/chain__` - `getSpentView` accepts a `TXMeta` insted of `TX`
+
 ## v1.0.0
 
 ### Migration
