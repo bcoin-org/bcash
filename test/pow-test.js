@@ -162,4 +162,172 @@ describe('Difficulty', function() {
     assert.strictEqual(network.pow.bits,
       await chain.getTarget(blocks[0].time, blocks[114]));
   });
+
+  it('should test cash difficulty', async () => {
+    const target = network.pow.limit.ushrn(4);
+    let bits = consensus.toCompact(target);
+
+    // Enable DAA Deployment
+    chain.state.daa = true;
+    const blocks = {};
+
+    blocks[0] = new ChainEntry();
+    blocks[0].height = 0;
+    blocks[0].time = 1269211443;
+    blocks[0].bits = bits;
+    blocks[0].chainwork = blocks[0].getProof();
+
+    chain.getAncestor = async(entry, height) => {
+      return blocks[height];
+    };
+
+    chain.getPrevious = async(entry) => {
+      return blocks[entry.height-1];
+    };
+
+    // Block counter.
+    let i;
+
+    // Pile up some blocks every 10 mins to establish some history.
+    for (i = 1; i < 2050; i++) {
+      blocks[i] = getEntry(blocks[i-1], 600, bits);
+    }
+
+    bits = await chain.getTarget(blocks[0].time, blocks[2049]);
+
+    // Difficulty stays the same as long as we produce a block every 10 mins.
+    for (let j = 0; j < 10; i++, j++) {
+      blocks[i] = getEntry(blocks[i-1], 600, bits);
+      assert.strictEqual(bits,
+        await chain.getTarget(blocks[0].time, blocks[i]));
+    }
+
+    // Make sure we skip over blocks that are out of wack. To do so, we produce
+    // a block that is far in the future, and then produce a block with the
+    // expected timestamp.
+    blocks[i] = getEntry(blocks[i-1], 6000, bits);
+    assert.strictEqual(bits,
+      await chain.getTarget(blocks[0].time, blocks[i++]));
+    blocks[i] = getEntry(blocks[i-1], 2 * 600 - 6000, bits);
+    assert.strictEqual(bits,
+      await chain.getTarget(blocks[0].time, blocks[i++]));
+
+    // The system should continue unaffected by the block with a bogous
+    // timestamps.
+    for (let j = 0; j < 20; i++, j++) {
+      blocks[i] = getEntry(blocks[i-1], 600, bits);
+      assert.strictEqual(bits,
+        await chain.getTarget(blocks[0].time, blocks[i]));
+    }
+
+    // We start emitting blocks slightly faster. The first block has no impact.
+    blocks[i] = getEntry(blocks[i-1], 550, bits);
+    assert.strictEqual(bits,
+      await chain.getTarget(blocks[0].time, blocks[i++]));
+
+    // Now we should see difficulty increase slowly.
+    for (let j = 0; j < 10; i++, j++) {
+      blocks[i] = getEntry(blocks[i-1], 550, bits);
+      const nextBits =
+          await chain.getTarget(blocks[0].time, blocks[i]);
+
+      const currentTarget = consensus.fromCompact(bits);
+      const nextTarget = consensus.fromCompact(nextBits);
+
+      // Make sure that difficulty increases very slowly.
+      assert.strictEqual(nextTarget.cmp(currentTarget), -1);
+      assert.strictEqual(
+        currentTarget.sub(nextTarget).cmp(currentTarget.iushrn(10)), -1);
+      bits = nextBits;
+    }
+
+    // Check the actual value.
+    assert.strictEqual(bits, 0x1c0fe7b1);
+
+    // If we dramatically shorten block production, difficulty increases faster.
+    for (let j = 0; j < 20; i++, j++) {
+      blocks[i] = getEntry(blocks[i-1], 10, bits);
+      const nextBits =
+          await chain.getTarget(blocks[0].time, blocks[i]);
+
+      const currentTarget = consensus.fromCompact(bits);
+      const nextTarget = consensus.fromCompact(nextBits);
+
+      // Make sure that difficulty increases very slowly.
+      assert.strictEqual(nextTarget.cmp(currentTarget), -1);
+      assert.strictEqual(
+        currentTarget.sub(nextTarget).cmp(currentTarget.iushrn(4)), -1);
+      bits = nextBits;
+    }
+
+    // Check the actual value.
+    assert.strictEqual(bits, 0x1c0db19f);
+
+    // We start to emit blocks significantly slower. The first block has no
+    // impact.
+    blocks[i] = getEntry(blocks[i-1], 6000, bits);
+    bits =  await chain.getTarget(blocks[0].time, blocks[i++]);
+
+    // Check the actual value.
+    assert.strictEqual(bits, 0x1c0d9222);
+
+    // If we dramatically slow down block production, difficulty decreases.
+    for (let j = 0; j < 93; i++, j++) {
+      blocks[i] = getEntry(blocks[i-1], 6000, bits);
+      const nextBits =
+          await chain.getTarget(blocks[0].time, blocks[i]);
+
+      const currentTarget = consensus.fromCompact(bits);
+      const nextTarget = consensus.fromCompact(nextBits);
+
+        // Check the difficulty decreases.
+      assert.ok(nextTarget.lte(network.pow.limit));
+      assert.strictEqual(nextTarget.cmp(currentTarget), 1);
+      assert.strictEqual(
+        nextTarget.sub(currentTarget).cmp(currentTarget.iushrn(3)), -1);
+      bits = nextBits;
+    }
+
+    // Check the actual value.
+    assert.strictEqual(bits, 0x1c2f13b9);
+
+    // Due to the window of time being bounded, next block's difficulty actually
+    // gets harder.
+    blocks[i] = getEntry(blocks[i-1], 6000, bits);
+    bits =  await chain.getTarget(blocks[0].time, blocks[i++]);
+    assert.strictEqual(bits, 0x1c2ee9bf);
+
+    // And goes down again. It takes a while due to the window being bounded and
+    // the skewed block causes 2 blocks to get out of the window.
+    for (let j = 0; j < 192; i++, j++) {
+      blocks[i] = getEntry(blocks[i-1], 6000, bits);
+      const nextBits =
+        await chain.getTarget(blocks[0].time, blocks[i]);
+
+      const currentTarget = consensus.fromCompact(bits);
+      const nextTarget = consensus.fromCompact(nextBits);
+
+      // Check the difficulty decreases.
+      assert.ok(nextTarget.lte(network.pow.limit));
+      assert.strictEqual(nextTarget.cmp(currentTarget), 1);
+      assert.strictEqual(
+        nextTarget.sub(currentTarget).cmp(currentTarget.iushrn(3)), -1);
+      bits = nextBits;
+    }
+
+    // Check the actual value.
+    assert.strictEqual(bits, 0x1d00ffff);
+
+    // Once the difficulty reached the minimum allowed level, it doesn't get any
+    // easier.
+    for (let j = 0; j < 5; i++, j++) {
+      blocks[i] = getEntry(blocks[i-1], 6000, bits);
+      const nextBits =
+        await chain.getTarget(blocks[0].time, blocks[i]);
+
+      // Check the difficulty stays constant.
+      assert.strictEqual(nextBits, network.pow.bits);
+      bits = nextBits;
+    }
+  });
 });
