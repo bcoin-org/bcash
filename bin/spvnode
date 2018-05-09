@@ -16,8 +16,8 @@ const node = new SPVNode({
   logConsole: true,
   logLevel: 'debug',
   db: 'leveldb',
-  persistent: true,
   memory: false,
+  persistent: true,
   workers: true,
   listen: true,
   loader: require
