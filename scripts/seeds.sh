@@ -1,8 +1,8 @@
 #!/bin/bash
 
 dir=$(dirname "$(which "$0")")
-url_main='https://raw.githubusercontent.com/bitcoin/bitcoin/master/contrib/seeds/nodes_main.txt'
-url_testnet='https://raw.githubusercontent.com/bitcoin/bitcoin/master/contrib/seeds/nodes_test.txt'
+url_main='https://raw.githubusercontent.com/Bitcoin-ABC/bitcoin-abc/master/contrib/seeds/nodes_main.txt'
+url_testnet='https://raw.githubusercontent.com/Bitcoin-ABC/bitcoin-abc/master/contrib/seeds/nodes_test.txt'
 
 getseeds() {
   echo "$(curl -s "$1")"
