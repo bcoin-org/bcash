@@ -7,11 +7,21 @@ const assert = require('./util/assert');
 const Chain = require('../lib/blockchain/chain');
 const ChainEntry = require('../lib/blockchain/chainentry');
 const Network = require('../lib/protocol/network');
+const consensus = require('../lib/protocol/consensus');
 
 const network = Network.get('main');
 
 function random(max) {
   return Math.floor(Math.random() * max);
+}
+
+function getEntry(prev, time, bits) {
+  const entry = new ChainEntry();
+  entry.height = prev.height + 1;
+  entry.time = prev.time + time;
+  entry.bits = bits;
+  entry.chainwork = entry.getProof().add(prev.chainwork);
+  return entry;
 }
 
 const chain = new Chain({
@@ -68,7 +78,6 @@ describe('Difficulty', function() {
     const blocks = [];
     for (let i = 0; i < 10000; i++) {
       const prev = new ChainEntry();
-      // prev.prevBlock
       prev.height = i;
       prev.time = 1269211443 + i * network.pow.targetSpacing;
       prev.bits = 0x207fffff;
@@ -85,5 +94,72 @@ describe('Difficulty', function() {
       const tdiff = chain.getProofTime(p1, p2);
       assert.strictEqual(tdiff, p1.time - p2.time);
     }
+  });
+
+  it('should get retargeting', async () => {
+    let target = network.pow.limit.ushrn(1);
+    let bits = consensus.toCompact(target);
+
+    const blocks = {};
+    blocks[0] = new ChainEntry();
+    blocks[0].height = 0;
+    blocks[0].time = 1269211443;
+    blocks[0].bits = bits;
+    blocks[0].chainwork = blocks[0].getProof();
+
+    chain.getAncestor = async(entry, height) => {
+      return blocks[height];
+    };
+
+    chain.getPrevious = async(entry) => {
+      return blocks[entry.height-1];
+    };
+
+    // Pile up some blocks.
+    for (let i = 1; i < 100; i++) {
+      blocks[i] = getEntry(blocks[i-1], network.pow.targetSpacing, bits);
+    }
+
+    // We start getting 2h blocks time. For the first 5 blocks, it doesn't
+    // matter as the MTP is not affected. For the next 5 block, MTP difference
+    // increases but stays below 12h.
+    for (let i = 100; i < 110; i++) {
+      blocks[i] = getEntry(blocks[i-1], 2 * 3600, bits);
+      assert.strictEqual(bits,
+        await chain.getTarget(blocks[0].time, blocks[i]));
+    }
+
+    // Now we expect the difficulty to decrease.
+    blocks[110] = getEntry(blocks[109], 2 * 3600, bits);
+    target.iadd(target.ushrn(2));
+    bits = consensus.toCompact(target);
+    assert.strictEqual(bits,
+      await chain.getTarget(blocks[0].time, blocks[110]));
+
+    // As we continue with 2h blocks, difficulty continue to decrease.
+    blocks[111] = getEntry(blocks[110], 2 * 3600, bits);
+    target = consensus.fromCompact(bits);
+    target.iadd(target.ushrn(2));
+    bits = consensus.toCompact(target);
+    assert.strictEqual(bits,
+      await chain.getTarget(blocks[0].time, blocks[111]));
+
+    // We decrease again.
+    blocks[112] = getEntry(blocks[111], 2 * 3600, bits);
+    target = consensus.fromCompact(bits);
+    target.iadd(target.ushrn(2));
+    bits = consensus.toCompact(target);
+    assert.strictEqual(bits,
+      await chain.getTarget(blocks[0].time, blocks[112]));
+
+    // We check that we do not go below the minimal difficulty.
+    blocks[113] = getEntry(blocks[112], 2 * 3600, bits);
+    assert.strictEqual(network.pow.bits,
+      await chain.getTarget(blocks[0].time, blocks[113]));
+
+    // Once we reached the minimal difficulty, we stick with it.
+    blocks[114] = getEntry(blocks[113], 2 * 3600, bits);
+    assert.strictEqual(network.pow.bits,
+      await chain.getTarget(blocks[0].time, blocks[114]));
   });
 });
