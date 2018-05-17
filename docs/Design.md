@@ -20,7 +20,7 @@ http client -> tx -> http server -> mempool
 ```
 
 Not only does the loose coupling make testing easier, it ensures people can
-utilize bcoin for many use cases.
+utilize bcash for many use cases.
 
 ### Performance
 
@@ -54,14 +54,14 @@ Bcoin uses [secp256k1-node][secp256k1-node] for ecdsa verification, which is a
 node.js binding to Pieter Wuille's blazingly fast [libsecp256k1][libsecp256k1]
 library.
 
-In the browser, bcoin will use [elliptic][elliptic], the fastest javascript
+In the browser, bcash will use [elliptic][elliptic], the fastest javascript
 ecdsa implementation. It will obviously never beat C and hand-optimized
 assembly, but it's still usable.
 
 #### Benefits
 
 The real feature of javascript is that your code will run almost anywhere. With
-bcoin, we now have a full node that will run on almost any browser, on laptops,
+bcash, we now have a full node that will run on almost any browser, on laptops,
 on servers, on smartphones, on most devices you can imagine, even by simply
 visiting a webpage.
 

@@ -1,67 +1,67 @@
-Bcoin ships with bcoin-cli as its default HTTP client for command line access.
+Bcash ships with bcoin-cli as its default HTTP client for command line access.
 
 ## Configuration
 
 Examples:
 
 ``` bash
-$ export BCOIN_API_KEY=hunter2
-$ export BCOIN_NETWORK=main
-$ export BCOIN_URI=http://localhost:8332
-$ bcoin cli info
+$ export BCASH_API_KEY=hunter2
+$ export BCASH_NETWORK=main
+$ export BCASH_URI=http://localhost:8332
+$ bcash cli info
 ```
 
 ``` bash
-$ bcoin cli info --api-key=hunter2 --uri=http://localhost
+$ bcash cli info --api-key=hunter2 --uri=http://localhost
 ```
 
 ``` bash
 $ echo 'api-key: hunter2' > ~/cli.conf
-$ bcoin cli info --config=~/cli.conf
+$ bcash cli info --config=~/cli.conf
 ```
 
 ## Examples
 
 ``` bash
-$ export BCOIN_API_KEY=your-api-key
+$ export BCASH_API_KEY=your-api-key
 
 # View the genesis block
-$ bcoin cli block 0
+$ bcash cli block 0
 
 # View the mempool
-$ bcoin cli mempool
+$ bcash cli mempool
 
 # View primary wallet
-$ bcoin wallet get
+$ bcash wallet get
 
 # View transaction history
-$ bcoin wallet history
+$ bcash wallet history
 
 # Send a transaction
-$ bcoin wallet send [address] 0.01
+$ bcash wallet send [address] 0.01
 
 # View balance
-$ bcoin wallet balance
+$ bcash wallet balance
 
 # Derive new address
-$ bcoin wallet address
+$ bcash wallet address
 
 # Create a new account
-$ bcoin wallet account create foo
+$ bcash wallet account create foo
 
 # Send from account
-$ bcoin wallet send [address] 0.01 --account=foo
+$ bcash wallet send [address] 0.01 --account=foo
 ```
 
 RPC examples:
 
 ``` bash
-$ bcoin rpc getblockchaininfo
-$ bcoin rpc getwalletinfo
-$ bcoin rpc getpeerinfo
-$ bcoin rpc getbalance
-$ bcoin rpc listtransactions
-$ bcoin rpc sendtoaddress [address] 0.01
+$ bcash rpc getblockchaininfo
+$ bcash rpc getwalletinfo
+$ bcash rpc getpeerinfo
+$ bcash rpc getbalance
+$ bcash rpc listtransactions
+$ bcash rpc sendtoaddress [address] 0.01
 ```
 
 ## Commands
@@ -121,7 +121,7 @@ bcoin-cli commands are split into 3 categories: cli, rpc, and wallet.
 
 ### RPC Commands
 
-Bcoin implements nearly all bitcoind calls along with some custom calls.
+Bcash implements nearly all bitcoind calls along with some custom calls.
 
 - `stop`
 - `help`
