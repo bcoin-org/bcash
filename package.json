@@ -66,7 +66,7 @@
   },
   "main": "./lib/bcoin.js",
   "bin": {
-    "bcash": "./bin/bcoin",
+    "bcash": "./bin/bcash",
     "bcash-node": "./bin/node",
     "bcash-spvnode": "./bin/spvnode",
     "bcash-wallet": "./bin/bwallet"
