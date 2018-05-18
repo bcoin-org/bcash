@@ -265,14 +265,6 @@ describe('Wallet', function() {
     await testP2PKH(false, false);
   });
 
-  it('should sign/verify p2wpkh tx', async () => {
-    await testP2PKH(true, false);
-  });
-
-  it('should sign/verify p2wpkh tx w/ nested bullshit', async () => {
-    await testP2PKH(true, true);
-  });
-
   it('should multisign/verify TX', async () => {
     const wallet = await wdb.create({
       type: 'multisig',
@@ -707,10 +699,10 @@ describe('Wallet', function() {
 
     assert.strictEqual(t2.getFee(v2), 5250);
 
-    assert.strictEqual(t2.getWeight(), 2084);
-    assert.strictEqual(t2.getBaseSize(), 521);
-    assert.strictEqual(t2.getSize(), 521);
-    assert.strictEqual(t2.getVirtualSize(), 521);
+    assert.strictEqual(t2.getSize(), 519);
+    assert.strictEqual(t2.getBaseSize(), 519);
+    assert.strictEqual(t2.getSize(), 519);
+    assert.strictEqual(t2.getVirtualSize(), 519);
 
     let balance = null;
     bob.once('balance', (b) => {
@@ -794,14 +786,6 @@ describe('Wallet', function() {
 
   it('should verify 2-of-3 p2sh tx', async () => {
     await testP2SH(false, false);
-  });
-
-  it('should verify 2-of-3 p2wsh tx', async () => {
-    await testP2SH(true, false);
-  });
-
-  it('should verify 2-of-3 p2wsh tx w/ nested bullshit', async () => {
-    await testP2SH(true, true);
   });
 
   it('should create account', async () => {

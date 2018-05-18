@@ -48,11 +48,6 @@ const wallet = new MemWallet({
   witness: false
 });
 
-const witWallet = new MemWallet({
-  network,
-  witness: true
-});
-
 let tip1 = null;
 let tip2 = null;
 
@@ -396,19 +391,11 @@ describe('Chain', function() {
 
     assert.strictEqual(chain.height, 631);
     assert(chain.state.hasCSV());
-    assert(chain.state.hasWitness());
 
     const cache = await chain.db.getStateCache();
     assert.deepStrictEqual(cache, chain.db.stateCache);
     assert.strictEqual(chain.db.stateCache.updates.length, 0);
     assert(await chain.db.verifyDeployments());
-  });
-
-  it('should have activated segwit', async () => {
-    const deployments = network.deployments;
-    const prev = await chain.getPrevious(chain.tip);
-    const state = await chain.getState(prev, deployments.segwit);
-    assert.strictEqual(state, 3);
   });
 
   it('should test csv', async () => {
@@ -546,67 +533,7 @@ describe('Chain', function() {
     }
   });
 
-  it('should fail to connect bad witness nonce size', async () => {
-    const block = await cpu.mineBlock();
-    const tx = block.txs[0];
-    const input = tx.inputs[0];
-    input.witness.set(0, Buffer.allocUnsafe(33));
-    block.refresh(true);
-    assert.strictEqual(await addBlock(block), 'bad-witness-nonce-size');
-  });
-
-  it('should fail to connect bad witness nonce', async () => {
-    const block = await cpu.mineBlock();
-    const tx = block.txs[0];
-    const input = tx.inputs[0];
-    input.witness.set(0, ONE_HASH);
-    block.refresh(true);
-    assert.strictEqual(await addBlock(block), 'bad-witness-merkle-match');
-  });
-
-  it('should fail to connect bad witness commitment', async () => {
-    const flags = common.flags.DEFAULT_FLAGS & ~common.flags.VERIFY_POW;
-    const block = await cpu.mineBlock();
-    const tx = block.txs[0];
-    const output = tx.outputs[1];
-
-    assert(output.script.isCommitment());
-
-    const commit = Buffer.from(output.script.getData(1));
-    commit.fill(0, 10);
-    output.script.setData(1, commit);
-    output.script.compile();
-
-    block.refresh(true);
-    block.merkleRoot = block.createMerkleRoot('hex');
-
-    assert.strictEqual(await addBlock(block, flags),
-      'bad-witness-merkle-match');
-  });
-
-  it('should fail to connect unexpected witness', async () => {
-    const flags = common.flags.DEFAULT_FLAGS & ~common.flags.VERIFY_POW;
-    const block = await cpu.mineBlock();
-    const tx = block.txs[0];
-    const output = tx.outputs[1];
-
-    assert(output.script.isCommitment());
-
-    tx.outputs.pop();
-
-    block.refresh(true);
-    block.merkleRoot = block.createMerkleRoot('hex');
-
-    assert.strictEqual(await addBlock(block, flags), 'unexpected-witness');
-  });
-
-  it('should add wit addrs to miner', async () => {
-    miner.addresses.length = 0;
-    miner.addAddress(witWallet.getReceive());
-    assert.strictEqual(witWallet.getReceive().getType(), 'witness');
-  });
-
-  it('should mine 2000 witness blocks', async () => {
+  it('should mine 2000 blocks', async () => {
     for (let i = 0; i < 2001; i++) {
       const block = await cpu.mineBlock();
       assert(block);
@@ -616,55 +543,15 @@ describe('Chain', function() {
     assert.strictEqual(chain.height, 2636);
   });
 
-  it('should mine a witness tx', async () => {
-    const prev = await chain.getBlock(chain.height - 2000);
-    const cb = prev.txs[0];
-    const mtx = new MTX();
-
-    mtx.addTX(cb, 0);
-    mtx.addOutput(witWallet.getAddress(), 1000);
-
-    witWallet.sign(mtx);
-
-    const job = await cpu.createJob();
-    job.addTX(mtx.toTX(), mtx.view);
-    job.refresh();
-
-    const block = await job.mineAsync();
-
-    assert(await chain.add(block));
-  });
-
-  it('should mine fail to connect too much weight', async () => {
-    const start = chain.height - 2000;
-    const end = chain.height - 200;
-    const job = await cpu.createJob();
-
-    for (let i = start; i <= end; i++) {
-      const block = await chain.getBlock(i);
-      const cb = block.txs[0];
-
-      const mtx = new MTX();
-      mtx.addTX(cb, 0);
-
-      for (let j = 0; j < 16; j++)
-        mtx.addOutput(witWallet.getAddress(), 1);
-
-      witWallet.sign(mtx);
-
-      job.pushTX(mtx.toTX());
-    }
-
-    job.refresh();
-
-    assert.strictEqual(await mineBlock(job), 'bad-blk-weight');
-  });
-
   it('should mine fail to connect too much size', async () => {
     const start = chain.height - 2000;
     const end = chain.height - 200;
     const job = await cpu.createJob();
 
+    const outputSize = 34;
+
+    let size = 0;
+
     for (let i = start; i <= end; i++) {
       const block = await chain.getBlock(i);
       const cb = block.txs[0];
@@ -672,12 +559,24 @@ describe('Chain', function() {
       const mtx = new MTX();
       mtx.addTX(cb, 0);
 
-      for (let j = 0; j < 20; j++)
-        mtx.addOutput(witWallet.getAddress(), 1);
+      const reward = consensus.getReward(i, network.halvingInterval);
+      const txSize = mtx.getSize();
+      const outputs = Math.min(
+        Math.floor((consensus.MAX_TX_SIZE - txSize - 107) / outputSize),
+        reward
+      );
 
-      witWallet.sign(mtx);
+      for (let j = 0; j < outputs; j++)
+        mtx.addOutput(wallet.getAddress(), 1);
+
+      size += mtx.getSize();
+
+      wallet.sign(mtx);
 
       job.pushTX(mtx.toTX());
+
+      if (size >= consensus.MAX_FORK_BLOCK_SIZE)
+        break;
     }
 
     job.refresh();
@@ -686,21 +585,38 @@ describe('Chain', function() {
   });
 
   it('should mine a big block', async () => {
+    const OPRETURN = Script.fromNulldata(Buffer.alloc(70, 1));
     const start = chain.height - 2000;
     const end = chain.height - 200;
     const job = await cpu.createJob();
+    const maxSigops = consensus.maxBlockSigops(consensus.MAX_FORK_BLOCK_SIZE);
+    const perTxSigops = Math.floor((maxSigops - 1000) / 1801) - 2;
+    const perTxSize = Math.floor(consensus.MAX_FORK_BLOCK_SIZE / 1801);
 
+    // fill max tx
+    // with 1801 transactions,
+    // limits sigops to maxSigops for a block
+    // and calculates expected tx size for each one
+    // that is filled with OP_RETURN
+
+    // consensus size: 117 bytes
     for (let i = start; i <= end; i++) {
       const block = await chain.getBlock(i);
-      const cb = block.txs[0];
+      const cb = block.txs[0]; // 117 bytes
 
       const mtx = new MTX();
-      mtx.addTX(cb, 0);
+      mtx.addTX(cb, 0); // 51 bytes
 
-      for (let j = 0; j < 15; j++)
-        mtx.addOutput(witWallet.getAddress(), 1);
+      const fillSize = perTxSize - (51 + 107 + (perTxSigops * 34));
+      const opreturns = Math.floor(fillSize / 81);
 
-      witWallet.sign(mtx);
+      for (let j = 0; j < perTxSigops; j++)
+        mtx.addOutput(wallet.getAddress(), 1); // 34 bytes
+
+      for (let j = 0; j < opreturns; j++)
+        mtx.addOutput({ script: OPRETURN });
+
+      wallet.sign(mtx); // 107 bytes
 
       job.pushTX(mtx.toTX());
     }
@@ -733,9 +649,9 @@ describe('Chain', function() {
     const mtx = new MTX();
 
     mtx.addTX(cb, 0);
-    mtx.addOutput(witWallet.getAddress(), 1);
+    mtx.addOutput(wallet.getAddress(), 1);
 
-    witWallet.sign(mtx);
+    wallet.sign(mtx);
 
     job.addTX(mtx.toTX(), mtx.view);
     job.refresh();
@@ -751,9 +667,9 @@ describe('Chain', function() {
     const mtx = new MTX();
 
     mtx.addTX(cb, 0);
-    mtx.addOutput(witWallet.getAddress(), 1e8);
+    mtx.addOutput(wallet.getAddress(), 1e8);
 
-    witWallet.sign(mtx);
+    wallet.sign(mtx);
 
     job.pushTX(mtx.toTX());
     job.refresh();
@@ -772,11 +688,11 @@ describe('Chain', function() {
 
     const value = Math.floor(consensus.MAX_MONEY / 2);
 
-    mtx.addOutput(witWallet.getAddress(), value);
-    mtx.addOutput(witWallet.getAddress(), value);
-    mtx.addOutput(witWallet.getAddress(), value);
+    mtx.addOutput(wallet.getAddress(), value);
+    mtx.addOutput(wallet.getAddress(), value);
+    mtx.addOutput(wallet.getAddress(), value);
 
-    witWallet.sign(mtx);
+    wallet.sign(mtx);
 
     job.pushTX(mtx.toTX());
     job.refresh();
@@ -822,7 +738,7 @@ describe('Chain', function() {
       assert(await chain.add(block, flags));
     }
 
-    assert.strictEqual(chain.height, 2749);
+    assert.strictEqual(chain.height, 2748);
   });
 
   it('should fail to connect too many sigops', async () => {
@@ -856,8 +772,7 @@ describe('Chain', function() {
         mtx.inputs[j - 2].script.fromItems([script.toRaw()]);
       }
 
-      mtx.addOutput(witWallet.getAddress(), 1);
-
+      mtx.addOutput(wallet.getAddress(), 1);
       job.pushTX(mtx.toTX());
     }
 

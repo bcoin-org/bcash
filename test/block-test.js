@@ -28,15 +28,9 @@ const block898352 = common.readBlock('block898352');
 const compact898352 = common.readCompact('compact898352');
 
 // Sigops counting test vectors
-// Format: [name, sigops, weight]
+// Format: [name, sigops]
 const sigopsVectors = [
-  ['block928816', 9109, 3568200],
-  ['block928828', 23236, 2481560],
-  ['block928831', 10035, 3992382],
-  ['block928848', 11319, 3992537],
-  ['block928849', 9137, 3682105],
-  ['block928927', 10015, 3992391],
-  ['block1087400', 1298, 193331]
+  ['block928828', 5809]
 ];
 
 describe('Block', function() {
@@ -339,23 +333,40 @@ describe('Block', function() {
     assert.bufferEqual(cblock1.toBlock().toRaw(), block.toRaw());
   });
 
+  it('should calculate consensus sigops limit', () => {
+    const maxUint = 0xffffffff;
+    const blockSigops = {
+      1: consensus.MAX_BLOCK_SIGOPS_PER_MB,
+      123456: consensus.MAX_BLOCK_SIGOPS_PER_MB,
+      1000000: consensus.MAX_BLOCK_SIGOPS_PER_MB,
+      1000001: 2 * consensus.MAX_BLOCK_SIGOPS_PER_MB,
+      1348592: 2 * consensus.MAX_BLOCK_SIGOPS_PER_MB,
+      2000000: 2 * consensus.MAX_BLOCK_SIGOPS_PER_MB,
+      2000001: 3 * consensus.MAX_BLOCK_SIGOPS_PER_MB,
+      2654321: 3 * consensus.MAX_BLOCK_SIGOPS_PER_MB,
+      [maxUint]: 4295 * consensus.MAX_BLOCK_SIGOPS_PER_MB
+    };
+
+    for (const [sigops, expected] of Object.entries(blockSigops))
+      assert.strictEqual(consensus.maxBlockSigops(sigops), expected);
+  });
+
   for (const cache of [false, true]) {
     const word = cache ? 'with' : 'without';
-    for (const [name, sigops, weight] of sigopsVectors) {
+    for (const [name, sigops] of sigopsVectors) {
       const ctx = common.readBlock(name);
       it(`should count sigops for ${name} (${word} cache)`, () => {
         const [block, view] = ctx.getBlock();
-        const flags = Script.flags.VERIFY_P2SH | Script.flags.VERIFY_WITNESS;
+        const flags = Script.flags.VERIFY_P2SH;
 
         if (!cache)
           block.refresh(true);
 
         let count = 0;
         for (const tx of block.txs)
-          count += tx.getSigopsCost(view, flags);
+          count += tx.getSigopsCount(view, flags);
 
         assert.strictEqual(count, sigops);
-        assert.strictEqual(block.getWeight(), weight);
       });
     }
   }

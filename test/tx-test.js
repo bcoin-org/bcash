@@ -14,13 +14,11 @@ const MTX = require('../lib/primitives/mtx');
 const Output = require('../lib/primitives/output');
 const Outpoint = require('../lib/primitives/outpoint');
 const Script = require('../lib/script/script');
-const Witness = require('../lib/script/witness');
 const Opcode = require('../lib/script/opcode');
 const Input = require('../lib/primitives/input');
 const CoinView = require('../lib/coins/coinview');
 const KeyRing = require('../lib/primitives/keyring');
 const Address = require('../lib/primitives/address');
-const BufferWriter = require('bufio').BufferWriter;
 const common = require('./util/common');
 
 const validTests = require('./data/tx-valid.json');
@@ -31,7 +29,6 @@ const tx1 = common.readTX('tx1');
 const tx2 = common.readTX('tx2');
 const tx3 = common.readTX('tx3');
 const tx4 = common.readTX('tx4');
-const tx5 = common.readTX('tx5');
 const tx6 = common.readTX('tx6');
 const tx7 = common.readTX('tx7');
 
@@ -47,7 +44,6 @@ function clearCache(tx, noCache) {
   const copy = tx.clone();
 
   assert.bufferEqual(tx.hash(), copy.hash());
-  assert.bufferEqual(tx.witnessHash(), copy.witnessHash());
 }
 
 function parseTXTest(data) {
@@ -101,12 +97,18 @@ function parseTXTest(data) {
 }
 
 function parseSighashTest(data) {
-  const [txHex, scriptHex, index, type, hash] = data;
+  const [
+    txHex,
+    scriptHex,
+    index,
+    type,
+    regularHash,
+    noforkidHash,
+    replayProtectedHash
+  ] = data;
 
   const tx = TX.fromRaw(txHex, 'hex');
   const script = Script.fromRaw(scriptHex, 'hex');
-
-  const expected = util.revHex(hash);
 
   let hex = type & 3;
 
@@ -123,8 +125,9 @@ function parseSighashTest(data) {
     script: script,
     index: index,
     type: type,
-    hash: hash,
-    expected: expected,
+    regularHash: regularHash,
+    noforkidHash: noforkidHash,
+    replayProtectedHash: replayProtectedHash,
     hex: hex
   };
 }
@@ -150,7 +153,7 @@ function createInput(value, view) {
   return [input, view];
 };
 
-function sigopContext(scriptSig, witness, scriptPubkey) {
+function sigopContext(scriptSig, scriptPubkey) {
   const fund = new TX();
 
   {
@@ -176,7 +179,6 @@ function sigopContext(scriptSig, witness, scriptPubkey) {
     input.prevout.hash = fund.hash('hex');
     input.prevout.index = 0;
     input.script = scriptSig;
-    input.witness = witness;
     spend.inputs.push(input);
 
     const output = new Output();
@@ -227,34 +229,6 @@ describe('TX', function() {
       assert(tx.verifyInput(0, coin, flags));
     });
 
-    it(`should parse witness tx properly ${suffix}`, () => {
-      const [tx] = tx5.getTX();
-      clearCache(tx, noCache);
-
-      assert.strictEqual(tx.inputs.length, 5);
-      assert.strictEqual(tx.outputs.length, 1980);
-      assert(tx.hasWitness());
-      assert.notStrictEqual(tx.txid(), tx.wtxid());
-      assert.strictEqual(tx.witnessHash('hex'),
-        '088c919cd8408005f255c411f786928385688a9e8fdb2db4c9bc3578ce8c94cf');
-      assert.strictEqual(tx.getSize(), 62138);
-      assert.strictEqual(tx.getVirtualSize(), 61813);
-      assert.strictEqual(tx.getWeight(), 247250);
-
-      const raw1 = tx.toRaw();
-      tx.refresh();
-
-      const raw2 = tx.toRaw();
-      assert.bufferEqual(raw1, raw2);
-
-      const tx2 = TX.fromRaw(raw2);
-      clearCache(tx2, noCache);
-
-      assert.strictEqual(tx.txid(), tx2.txid());
-      assert.strictEqual(tx.wtxid(), tx2.wtxid());
-      assert.notStrictEqual(tx.txid(), tx2.wtxid());
-    });
-
     it(`should verify the coolest tx ever sent ${suffix}`, () => {
       const [tx, view] = tx6.getTX();
       clearCache(tx, noCache);
@@ -264,7 +238,11 @@ describe('TX', function() {
     it(`should verify a historical transaction ${suffix}`, () => {
       const [tx, view] = tx7.getTX();
       clearCache(tx, noCache);
-      assert(tx.verify(view));
+
+      const flags = Script.flags.STANDARD_VERIFY_FLAGS
+        ^ Script.flags.VERIFY_SIGHASH_FORKID;
+
+      assert(tx.verify(view, flags));
     });
 
     for (const tests of [validTests, invalidTests]) {
@@ -318,6 +296,7 @@ describe('TX', function() {
             });
             continue;
           }
+
           it(`should handle invalid tx test ${suffix}: ${comments}`, () => {
             clearCache(tx, noCache);
             assert.ok(!tx.verify(view, flags));
@@ -331,15 +310,36 @@ describe('TX', function() {
         continue;
 
       const test = parseSighashTest(json);
-      const {tx, script, index, type} = test;
-      const {hash, hex, expected} = test;
+      const {tx, script, index, type, hex} = test;
+      const {regularHash, noforkidHash, replayProtectedHash} = test;
 
       clearCache(tx, noCache);
 
-      it(`should get sighash of ${hash} (${hex}) ${suffix}`, () => {
-        const subscript = script.getSubscript(0).removeSeparators();
-        const hash = tx.signatureHash(index, subscript, 0, type, 0);
-        assert.strictEqual(hash.toString('hex'), expected);
+      it(`should get sighash of ${regularHash} (${hex}) ${suffix}`, () => {
+        let subscript = script;
+
+        if (!(type & Script.hashType.SIGHASH_FORKID))
+          subscript = script.getSubscript(0).removeSeparators();
+
+        const reghash = tx.signatureHash(index, subscript, 0, type);
+        const rreg = util.revHex(regularHash);
+
+        const oldhash = tx.signatureHash(index, subscript, 0, type, 0);
+        const rold = util.revHex(noforkidHash);
+
+        const repflags = Script.flags.VERIFY_SIGHASH_FORKID
+          | Script.flags.VERIFY_REPLAY_PROTECTION;
+
+        const rephash = tx.signatureHash(index, subscript, 0, type, repflags);
+        const rrph = util.revHex(replayProtectedHash);
+
+        assert.strictEqual(reghash.toString('hex'), rreg,
+          'Regular sighash was not correct.');
+        assert.strictEqual(oldhash.toString('hex'), rold,
+          'No Fork ID sighash was not correct.');
+        assert.strictEqual(rephash.toString('hex'), rrph,
+          'Replay protected hash was not correct.'
+        );
       });
     }
   }
@@ -632,13 +632,11 @@ describe('TX', function() {
       Opcode.fromInt(0)
     ]);
 
-    const witness = new Witness();
+    const ctx = sigopContext(input, output);
 
-    const ctx = sigopContext(input, witness, output);
-
-    assert.strictEqual(ctx.spend.getSigopsCost(ctx.view, flags), 0);
-    assert.strictEqual(ctx.fund.getSigopsCost(ctx.view, flags),
-      consensus.MAX_MULTISIG_PUBKEYS * consensus.WITNESS_SCALE_FACTOR);
+    assert.strictEqual(ctx.spend.getSigopsCount(ctx.view, flags), 0);
+    assert.strictEqual(ctx.fund.getSigopsCount(ctx.view, flags),
+      consensus.MAX_MULTISIG_PUBKEYS);
   });
 
   it('should count sigops for p2sh multisig', () => {
@@ -655,121 +653,9 @@ describe('TX', function() {
       Opcode.fromData(redeem.toRaw())
     ]);
 
-    const witness = new Witness();
+    const ctx = sigopContext(input, output);
 
-    const ctx = sigopContext(input, witness, output);
-
-    assert.strictEqual(ctx.spend.getSigopsCost(ctx.view, flags),
-      2 * consensus.WITNESS_SCALE_FACTOR);
-  });
-
-  it('should count sigops for p2wpkh', () => {
-    const flags = Script.flags.VERIFY_WITNESS | Script.flags.VERIFY_P2SH;
-    const key = KeyRing.generate();
-
-    const witness = new Witness([
-      Buffer.from([0]),
-      Buffer.from([0])
-    ]);
-
-    const input = new Script();
-
-    {
-      const output = Script.fromProgram(0, key.getKeyHash());
-      const ctx = sigopContext(input, witness, output);
-
-      assert.strictEqual(ctx.spend.getSigopsCost(ctx.view, flags), 1);
-      assert.strictEqual(
-        ctx.spend.getSigopsCost(ctx.view, flags & ~Script.flags.VERIFY_WITNESS),
-        0);
-    }
-
-    {
-      const output = Script.fromProgram(1, key.getKeyHash());
-      const ctx = sigopContext(input, witness, output);
-
-      assert.strictEqual(ctx.spend.getSigopsCost(ctx.view, flags), 0);
-    }
-
-    {
-      const output = Script.fromProgram(0, key.getKeyHash());
-      const ctx = sigopContext(input, witness, output);
-
-      ctx.spend.inputs[0].prevout.hash = consensus.NULL_HASH;
-      ctx.spend.inputs[0].prevout.index = 0xffffffff;
-      ctx.spend.refresh();
-
-      assert.strictEqual(ctx.spend.getSigopsCost(ctx.view, flags), 0);
-    }
-  });
-
-  it('should count sigops for nested p2wpkh', () => {
-    const flags = Script.flags.VERIFY_WITNESS | Script.flags.VERIFY_P2SH;
-    const key = KeyRing.generate();
-
-    const redeem = Script.fromProgram(0, key.getKeyHash());
-    const output = Script.fromScripthash(redeem.hash160());
-
-    const input = new Script([
-      Opcode.fromData(redeem.toRaw())
-    ]);
-
-    const witness = new Witness([
-      Buffer.from([0]),
-      Buffer.from([0])
-    ]);
-
-    const ctx = sigopContext(input, witness, output);
-
-    assert.strictEqual(ctx.spend.getSigopsCost(ctx.view, flags), 1);
-  });
-
-  it('should count sigops for p2wsh', () => {
-    const flags = Script.flags.VERIFY_WITNESS | Script.flags.VERIFY_P2SH;
-    const key = KeyRing.generate();
-    const pub = key.publicKey;
-
-    const redeem = Script.fromMultisig(1, 2, [pub, pub]);
-    const output = Script.fromProgram(0, redeem.sha256());
-
-    const input = new Script();
-
-    const witness = new Witness([
-      Buffer.from([0]),
-      Buffer.from([0]),
-      redeem.toRaw()
-    ]);
-
-    const ctx = sigopContext(input, witness, output);
-
-    assert.strictEqual(ctx.spend.getSigopsCost(ctx.view, flags), 2);
-    assert.strictEqual(
-      ctx.spend.getSigopsCost(ctx.view, flags & ~Script.flags.VERIFY_WITNESS),
-      0);
-  });
-
-  it('should count sigops for nested p2wsh', () => {
-    const flags = Script.flags.VERIFY_WITNESS | Script.flags.VERIFY_P2SH;
-    const key = KeyRing.generate();
-    const pub = key.publicKey;
-
-    const wscript = Script.fromMultisig(1, 2, [pub, pub]);
-    const redeem = Script.fromProgram(0, wscript.sha256());
-    const output = Script.fromScripthash(redeem.hash160());
-
-    const input = new Script([
-      Opcode.fromData(redeem.toRaw())
-    ]);
-
-    const witness = new Witness([
-      Buffer.from([0]),
-      Buffer.from([0]),
-      wscript.toRaw()
-    ]);
-
-    const ctx = sigopContext(input, witness, output);
-
-    assert.strictEqual(ctx.spend.getSigopsCost(ctx.view, flags), 2);
+    assert.strictEqual(ctx.spend.getSigopsCount(ctx.view, flags), 2);
   });
 
   it('should return addresses for standard inputs', () => {
@@ -844,34 +730,6 @@ describe('TX', function() {
       // this is input and output
       Address.fromBase58('1EeREnzQujX7CLgmzDSaebS48jxjeyBHQM'),
       Address.fromBase58('1fLeMazoEy8FfgeFcppRxNYZs54jyLccw')
-    ];
-
-    const addressesView = tx.getAddresses(view);
-    const addressesNoView = tx.getAddresses();
-
-    assert.strictEqual(addresses.length, addressesView.length);
-    assert.strictEqual(addresses.length, addressesNoView.length);
-
-    addresses.forEach((addr, i) => {
-      assert(addr.equals(addressesView[i]));
-      assert(addr.equals(addressesNoView[i]));
-    });
-  });
-
-  it('should return addresses with witness data', () => {
-    const [tx, view] = tx5.getTX();
-
-    const addresses = [
-      // inputs
-      Address.fromBech32('bc1qnjhhj5g8u46fvhnm34me52ahnx5vhhhuk6m7ng'),
-      Address.fromBech32('bc1q3ehzk5qa02sf05zyll0thth5t92kg6twah8hj3'),
-      Address.fromBase58('1C4irrkJiHhjKq62uPBw9huZnQsFSRHtjn'),
-      Address.fromBech32('bc1q4gzv2jkfnym3s8f69kj55l4yfh7aallphtzutp'),
-      Address.fromBech32('bc1q8838eem5cqqlxn34neay8sd7ru4nnm7yfv66xv'),
-
-      // outputs
-      Address.fromBech32('bc1q4uxyx3qaanm5elq4w2kxytvkpufa33s08vldx7'),
-      Address.fromBech32('bc1q8m66kw3789mvpfpcxxh880zg6jjwpyntspcnmy')
     ];
 
     const addressesView = tx.getAddresses(view);
@@ -965,23 +823,6 @@ describe('TX', function() {
     expectedPrevouts.forEach((prevout, i) => {
       assert.strictEqual(prevout, prevouts[i]);
     });
-  });
-
-  it('should serialize without witness data', () => {
-    const [tx] = tx2.getTX();
-    const [txWit] = tx5.getTX();
-
-    const bw1 = new BufferWriter();
-    const bw2 = new BufferWriter();
-
-    tx.toNormalWriter(bw1);
-    txWit.toNormalWriter(bw2);
-
-    const tx1normal = TX.fromRaw(bw1.render());
-    const tx2normal = TX.fromRaw(bw2.render());
-
-    assert.strictEqual(tx1normal.hasWitness(), false);
-    assert.strictEqual(tx2normal.hasWitness(), false);
   });
 
   it('should check if tx is free', () => {

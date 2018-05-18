@@ -15,9 +15,9 @@ const KeyRing = require('../lib/primitives/keyring');
 const Address = require('../lib/primitives/address');
 const Outpoint = require('../lib/primitives/outpoint');
 const Script = require('../lib/script/script');
-const Witness = require('../lib/script/witness');
 const MemWallet = require('./util/memwallet');
-const ALL = Script.hashType.ALL;
+
+const SHTYPE = Script.hashType.ALL | Script.hashType.SIGHASH_FORKID;
 
 const ONE_HASH = Buffer.alloc(32, 0x00);
 ONE_HASH[0] = 0x01;
@@ -69,7 +69,6 @@ describe('Mempool', function() {
     await workers.open();
     await chain.open();
     await mempool.open();
-    chain.state.flags |= Script.flags.VERIFY_WITNESS;
   });
 
   it('should handle incoming orphans and TXs', async () => {
@@ -83,7 +82,7 @@ describe('Mempool', function() {
 
     t1.addCoin(dummyInput(script, ONE_HASH.toString('hex')));
 
-    const sig = t1.signature(0, script, 70000, key.privateKey, ALL, 0);
+    const sig = t1.signature(0, script, 70000, key.privateKey, SHTYPE);
 
     t1.inputs[0].script = Script.fromItems([sig]);
 
@@ -192,7 +191,7 @@ describe('Mempool', function() {
 
     chain.tip.height = 200;
 
-    const sig = tx.signature(0, prev, 70000, key.privateKey, ALL, 0);
+    const sig = tx.signature(0, prev, 70000, key.privateKey, SHTYPE);
     tx.inputs[0].script = Script.fromItems([sig]);
 
     await mempool.addTX(tx.toTX());
@@ -213,7 +212,7 @@ describe('Mempool', function() {
     tx.setLocktime(200);
     chain.tip.height = 200 - 1;
 
-    const sig = tx.signature(0, prev, 70000, key.privateKey, ALL, 0);
+    const sig = tx.signature(0, prev, 70000, key.privateKey, SHTYPE);
     tx.inputs[0].script = Script.fromItems([sig]);
 
     let err;
@@ -226,91 +225,6 @@ describe('Mempool', function() {
     assert(err);
 
     chain.tip.height = 0;
-  });
-
-  it('should not cache a malleated wtx with mutated sig', async () => {
-    const key = KeyRing.generate();
-
-    key.witness = true;
-
-    const tx = new MTX();
-    tx.addOutput(wallet.getAddress(), 50000);
-    tx.addOutput(wallet.getAddress(), 10000);
-
-    const prev = Script.fromProgram(0, key.getKeyHash());
-    const prevHash = random.randomBytes(32).toString('hex');
-
-    tx.addCoin(dummyInput(prev, prevHash));
-
-    const prevs = Script.fromPubkeyhash(key.getKeyHash());
-
-    const sig = tx.signature(0, prevs, 70000, key.privateKey, ALL, 1);
-    sig[sig.length - 1] = 0;
-
-    tx.inputs[0].witness = new Witness([sig, key.publicKey]);
-
-    let err;
-    try {
-      await mempool.addTX(tx.toTX());
-    } catch (e) {
-      err = e;
-    }
-
-    assert(err);
-    assert(!mempool.hasReject(tx.hash()));
-  });
-
-  it('should not cache a malleated tx with unnecessary witness', async () => {
-    const key = KeyRing.generate();
-
-    const tx = new MTX();
-    tx.addOutput(wallet.getAddress(), 50000);
-    tx.addOutput(wallet.getAddress(), 10000);
-
-    const prev = Script.fromPubkey(key.publicKey);
-    const prevHash = random.randomBytes(32).toString('hex');
-
-    tx.addCoin(dummyInput(prev, prevHash));
-
-    const sig = tx.signature(0, prev, 70000, key.privateKey, ALL, 0);
-    tx.inputs[0].script = Script.fromItems([sig]);
-    tx.inputs[0].witness.push(Buffer.alloc(0));
-
-    let err;
-    try {
-      await mempool.addTX(tx.toTX());
-    } catch (e) {
-      err = e;
-    }
-
-    assert(err);
-    assert(!mempool.hasReject(tx.hash()));
-  });
-
-  it('should not cache a malleated wtx with wit removed', async () => {
-    const key = KeyRing.generate();
-
-    key.witness = true;
-
-    const tx = new MTX();
-    tx.addOutput(wallet.getAddress(), 50000);
-    tx.addOutput(wallet.getAddress(), 10000);
-
-    const prev = Script.fromProgram(0, key.getKeyHash());
-    const prevHash = random.randomBytes(32).toString('hex');
-
-    tx.addCoin(dummyInput(prev, prevHash));
-
-    let err;
-    try {
-      await mempool.addTX(tx.toTX());
-    } catch (e) {
-      err = e;
-    }
-
-    assert(err);
-    assert(err.malleated);
-    assert(!mempool.hasReject(tx.hash()));
   });
 
   it('should cache non-malleated tx without sig', async () => {
