@@ -6,7 +6,7 @@ Bcoin maintains a wallet database which contains every wallet. Wallets are _not
 usable_ without also using a wallet database. For testing, the wallet database
 can be in-memory, but it must be there.
 
-Wallets in bcoin use bip44. They also originally supported bip45 for multisig,
+Wallets in bcash use bip44. They also originally supported bip45 for multisig,
 but support was removed to reduce code complexity, and also because bip45
 doesn't seem to add any benefit in practice.
 
