@@ -24,10 +24,10 @@ module.exports = {
   },
   plugins: [
     new webpack.DefinePlugin({
-      'process.env.BCOIN_NETWORK':
-        str(env.BCOIN_NETWORK || 'main'),
-      'process.env.BCOIN_WORKER_FILE':
-        str(env.BCOIN_WORKER_FILE || '/bcoin-worker.js')
+      'process.env.BCASH_NETWORK':
+        str(env.BCASH_NETWORK || 'main'),
+      'process.env.BCASH_WORKER_FILE':
+        str(env.BCASH_WORKER_FILE || '/bcoin-worker.js')
     }),
     new UglifyJsPlugin()
   ]
