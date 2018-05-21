@@ -56,11 +56,6 @@ class MemWallet {
       this.key = options.key;
     }
 
-    if (options.witness != null) {
-      assert(typeof options.witness === 'boolean');
-      this.witness = options.witness;
-    }
-
     if (options.account != null) {
       assert(typeof options.account === 'number');
       this.account = options.account;
