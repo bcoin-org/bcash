@@ -918,7 +918,6 @@ describe('TX', function() {
 
     for (const json of [jsonDefault, jsonView, jsonEntry, jsonIndex, jsonAll]) {
       assert.strictEqual(json.hash, hash);
-      assert.strictEqual(json.witnessHash, hash);
       assert.strictEqual(json.version, version);
       assert.strictEqual(json.locktime, locktime);
       assert.strictEqual(json.hex, hex);

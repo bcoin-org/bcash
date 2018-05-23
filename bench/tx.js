@@ -28,7 +28,7 @@ const tx10 = common.readTX('tx10');
   const end = bench('sigops');
 
   for (let i = 0; i < 100000; i++)
-    tx.getSigopsCost(view);
+    tx.getSigopsCount(view);
 
   end(100000);
 }
@@ -52,18 +52,6 @@ const tx10 = common.readTX('tx10');
   for (let i = 0; i < 30000; i++) {
     tx.hash();
     tx._hash = null;
-  }
-
-  end(30000);
-}
-
-{
-  const [tx] = tx5.getTX();
-  const end = bench('witness hash');
-
-  for (let i = 0; i < 30000; i++) {
-    tx.witnessHash();
-    tx._whash = null;
   }
 
   end(30000);

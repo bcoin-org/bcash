@@ -633,18 +633,18 @@ describe('Node', function() {
     const result = json.result;
 
     let fees = 0;
-    let weight = 0;
+    let size = 0;
 
     for (const item of result.transactions) {
       fees += item.fee;
-      weight += item.weight;
+      size += item.size;
     }
 
     assert.strictEqual(result.transactions.length, 2);
     assert.strictEqual(fees, tx1.getFee() + tx2.getFee());
-    assert.strictEqual(weight, tx1.getWeight() + tx2.getWeight());
-    assert.strictEqual(result.transactions[0].hash, tx1.txid());
-    assert.strictEqual(result.transactions[1].hash, tx2.txid());
+    assert.strictEqual(size, tx1.getSize() + tx2.getSize());
+    assert.strictEqual(result.transactions[0].txid, tx1.txid());
+    assert.strictEqual(result.transactions[1].txid, tx2.txid());
     assert.strictEqual(result.coinbasevalue, 125e7 + fees);
   });
 
@@ -673,7 +673,7 @@ describe('Node', function() {
 
   it('should get a block template', async () => {
     let fees = 0;
-    let weight = 0;
+    let size = 0;
 
     node.rpc.refreshBlock();
 
@@ -692,14 +692,14 @@ describe('Node', function() {
 
     for (const item of result.transactions) {
       fees += item.fee;
-      weight += item.weight;
+      size += item.size;
     }
 
     assert.strictEqual(result.transactions.length, 2);
     assert.strictEqual(fees, tx1.getFee() + tx2.getFee());
-    assert.strictEqual(weight, tx1.getWeight() + tx2.getWeight());
-    assert.strictEqual(result.transactions[0].hash, tx2.txid());
-    assert.strictEqual(result.transactions[1].hash, tx1.txid());
+    assert.strictEqual(size, tx1.getSize() + tx2.getSize());
+    assert.strictEqual(result.transactions[0].txid, tx2.txid());
+    assert.strictEqual(result.transactions[1].txid, tx1.txid());
     assert.strictEqual(result.coinbasevalue, 125e7 + fees);
   });
 
