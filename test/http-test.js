@@ -219,8 +219,8 @@ describe('HTTP', function() {
       mintime: 1296688603,
       maxtime: json.maxtime,
       expires: json.expires,
-      sigoplimit: 20000,
-      sizelimit: 1000000,
+      sigoplimit: 640000,
+      sizelimit: 32000000,
       longpollid:
         '0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206'
         + '00000000',

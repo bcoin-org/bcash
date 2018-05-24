@@ -455,20 +455,10 @@ describe('Node', function() {
     miner.mempool = node.mempool;
   });
 
-  it('should not get a block template', async () => {
-    const json = await node.rpc.call({
-      method: 'getblocktemplate'
-    }, {});
-    assert(json.error);
-    assert.strictEqual(json.error.code, -8);
-  });
-
   it('should get a block template', async () => {
     const json = await node.rpc.call({
       method: 'getblocktemplate',
-      params: [
-        {rules: ['segwit']}
-      ],
+      params: [],
       id: '1'
     }, {});
 
@@ -483,7 +473,7 @@ describe('Node', function() {
         capabilities: ['proposal'],
         mutable: ['time', 'transactions', 'prevblock'],
         version: 536870912,
-        rules: ['csv', '!segwit', 'testdummy'],
+        rules: ['csv', 'testdummy'],
         vbavailable: {},
         vbrequired: 0,
         height: 437,
@@ -496,17 +486,13 @@ describe('Node', function() {
         mintime: json.result.mintime,
         maxtime: json.result.maxtime,
         expires: json.result.expires,
-        sigoplimit: 80000,
-        sizelimit: 4000000,
-        weightlimit: 4000000,
+        sigoplimit: 640000,
+        sizelimit: 32000000,
         longpollid: node.chain.tip.rhash() + '00000000',
         submitold: false,
         coinbaseaux: { flags: '6d696e65642062792062636f696e' },
         coinbasevalue: 1250000000,
         coinbasetxn: undefined,
-        default_witness_commitment:
-          '6a24aa21a9ede2f61c3f71d1defd3fa999dfa36953755c690689799962'
-          + 'b48bebd836974e8cf9',
         transactions: []
       },
       error: null,
@@ -679,9 +665,7 @@ describe('Node', function() {
 
     const json = await node.rpc.call({
       method: 'getblocktemplate',
-      params: [
-        {rules: ['segwit']}
-      ],
+      params: [],
       id: '1'
     }, {});
 
