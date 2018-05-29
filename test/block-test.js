@@ -207,7 +207,7 @@ describe('Block', function() {
   it('should handle compact block', () => {
     const [block] = block426884.getBlock();
     const [cblock1] = compact426884.getBlock();
-    const cblock2 = CompactBlock.fromBlock(block, false, cblock1.keyNonce);
+    const cblock2 = CompactBlock.fromBlock(block, cblock1.keyNonce);
 
     assert(cblock1.init());
 
@@ -221,7 +221,7 @@ describe('Block', function() {
       map.set(tx.hash('hex'), { tx });
     }
 
-    const full = cblock1.fillMempool(false, { map });
+    const full = cblock1.fillMempool({ map });
     assert(full);
 
     for (const tx of cblock1.available)
@@ -233,7 +233,7 @@ describe('Block', function() {
   it('should handle half-full compact block', () => {
     const [block] = block426884.getBlock();
     const [cblock1] = compact426884.getBlock();
-    const cblock2 = CompactBlock.fromBlock(block, false, cblock1.keyNonce);
+    const cblock2 = CompactBlock.fromBlock(block, cblock1.keyNonce);
 
     assert(cblock1.init());
 
@@ -247,7 +247,7 @@ describe('Block', function() {
       map.set(tx.hash('hex'), { tx });
     }
 
-    const full = cblock1.fillMempool(false, { map });
+    const full = cblock1.fillMempool({ map });
     assert(!full);
 
     const rawReq = cblock1.toRequest().toRaw();
@@ -269,7 +269,7 @@ describe('Block', function() {
   it('should handle compact block', () => {
     const [block] = block898352.getBlock();
     const [cblock1] = compact898352.getBlock();
-    const cblock2 = CompactBlock.fromBlock(block, false, cblock1.keyNonce);
+    const cblock2 = CompactBlock.fromBlock(block, cblock1.keyNonce);
 
     assert(cblock1.init());
 
@@ -285,7 +285,7 @@ describe('Block', function() {
       map.set(tx.hash('hex'), { tx });
     }
 
-    const full = cblock1.fillMempool(false, { map });
+    const full = cblock1.fillMempool({ map });
     assert(full);
 
     for (const tx of cblock1.available)
@@ -297,7 +297,7 @@ describe('Block', function() {
   it('should handle half-full compact block', () => {
     const [block] = block898352.getBlock();
     const [cblock1] = compact898352.getBlock();
-    const cblock2 = CompactBlock.fromBlock(block, false, cblock1.keyNonce);
+    const cblock2 = CompactBlock.fromBlock(block, cblock1.keyNonce);
 
     assert(cblock1.init());
 
@@ -313,7 +313,7 @@ describe('Block', function() {
       map.set(tx.hash('hex'), { tx });
     }
 
-    const full = cblock1.fillMempool(false, { map });
+    const full = cblock1.fillMempool({ map });
     assert(!full);
 
     const rawReq = cblock1.toRequest().toRaw();
