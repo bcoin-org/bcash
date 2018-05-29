@@ -1,5 +1,8 @@
 # Bcash
 
+[![CircleCi Status][circleci-status-img]][circleci-status-url]
+[![Coverage Status][coverage-status-img]][coverage-status-url]
+
 **Bcash** is an alternative implementation of the bitcoin cash protocol,
 written in node.js.
 
@@ -63,3 +66,9 @@ See LICENSE for more info.
 [freenode]: https://freenode.net/
 [irc]: irc://irc.freenode.net/bcoin
 [changelog]: https://github.com/bcoin-org/bcash/blob/master/CHANGELOG.md
+
+
+[coverage-status-img]: https://coveralls.io/repos/github/bcoin-org/bcash/badge.svg?branch=staging
+[coverage-status-url]: https://coveralls.io/github/bcoin-org/bcash?branch=staging
+[circleci-status-img]: https://circleci.com/gh/bcoin-org/bcash/tree/staging.svg?style=shield
+[circleci-status-url]: https://circleci.com/gh/bcoin-org/bcash/tree/staging
