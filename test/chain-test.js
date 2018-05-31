@@ -585,6 +585,9 @@ describe('Chain', function() {
   });
 
   it('should mine a big block', async () => {
+    const oldMaxForkBlockSize = consensus.MAX_FORK_BLOCK_SIZE;
+    consensus.MAX_FORK_BLOCK_SIZE = 4000000;
+
     const OPRETURN = Script.fromNulldata(Buffer.alloc(70, 1));
     const start = chain.height - 2000;
     const end = chain.height - 200;
@@ -624,6 +627,8 @@ describe('Chain', function() {
     job.refresh();
 
     assert.strictEqual(await mineBlock(job), 'OK');
+
+    consensus.MAX_FORK_BLOCK_SIZE = oldMaxForkBlockSize;
   });
 
   it('should fail to connect bad versions', async () => {
