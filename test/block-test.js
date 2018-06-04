@@ -121,7 +121,6 @@ describe('Block', function() {
     assert(block.verify());
     assert(block.txs[0].isCoinbase());
     assert(block.txs[0].isSane());
-    assert(!block.hasWitness());
     assert.strictEqual(block.getSize(), 284231);
 
     let sigops = 0;
@@ -133,7 +132,6 @@ describe('Block', function() {
       assert(tx.isSane());
       assert(tx.verifyInputs(view, height));
       assert(tx.verify(view, flags));
-      assert(!tx.hasWitness());
 
       sigops += tx.getSigopsCount(view, flags);
       reward += tx.getFee(view);

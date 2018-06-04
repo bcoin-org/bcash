@@ -44,8 +44,7 @@ const miner = new Miner({
 const cpu = miner.cpu;
 
 const wallet = new MemWallet({
-  network,
-  witness: false
+  network
 });
 
 let tip1 = null;

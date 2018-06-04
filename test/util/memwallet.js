@@ -20,7 +20,6 @@ class MemWallet {
     this.network = Network.primary;
     this.master = null;
     this.key = null;
-    this.witness = false;
     this.account = 0;
     this.receiveDepth = 1;
     this.changeDepth = 1;
@@ -135,11 +134,8 @@ class MemWallet {
 
     const ring = new KeyRing({
       network: this.network,
-      privateKey: key.privateKey,
-      witness: this.witness
+      privateKey: key.privateKey
     });
-
-    ring.witness = this.witness;
 
     return ring;
   }
