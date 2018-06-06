@@ -327,7 +327,7 @@ describe('Script', function() {
 
         let err;
         try {
-          Script.verify(input, false, output, tx, 0, value, flags);
+          Script.verify(input, null, output, tx, 0, value, flags);
         } catch (e) {
           err = e;
         }

@@ -685,9 +685,6 @@ describe('Wallet', function() {
     assert.strictEqual(t2.getFee(v2), 5250);
 
     assert.strictEqual(t2.getSize(), 519);
-    assert.strictEqual(t2.getBaseSize(), 519);
-    assert.strictEqual(t2.getSize(), 519);
-    assert.strictEqual(t2.getVirtualSize(), 519);
 
     let balance = null;
     bob.once('balance', (b) => {
