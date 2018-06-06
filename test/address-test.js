@@ -13,7 +13,7 @@ describe('Address', function() {
     const p2pkh = Buffer.from(raw, 'hex');
     const addr = Address.fromPubkeyhash(p2pkh);
     const expectedAddr = '1MirQ9bwyQcGVJPwKUgapu5ouK2E2Ey4gX';
-    assert.strictEqual(addr.toString('main'), expectedAddr);
+    assert.strictEqual(addr.toBase58('main'), expectedAddr);
   });
 
   it('should match mainnet p2pkh address 2', () => {
@@ -21,7 +21,7 @@ describe('Address', function() {
     const p2pkh = Buffer.from(raw, 'hex');
     const addr = Address.fromPubkeyhash(p2pkh);
     const expectedAddr = '12MzCDwodF9G1e7jfwLXfR164RNtx4BRVG';
-    assert.strictEqual(addr.toString('main'), expectedAddr);
+    assert.strictEqual(addr.toBase58('main'), expectedAddr);
   });
 
   it('should match testnet p2pkh address', () => {
@@ -29,7 +29,7 @@ describe('Address', function() {
     const p2pkh = Buffer.from(raw, 'hex');
     const addr = Address.fromPubkeyhash(p2pkh);
     const expectedAddr = 'mrX9vMRYLfVy1BnZbc5gZjuyaqH3ZW2ZHz';
-    assert.strictEqual(addr.toString('testnet'), expectedAddr);
+    assert.strictEqual(addr.toBase58('testnet'), expectedAddr);
   });
 
   it('should handle wrong p2pkh hash length', () => {
@@ -59,7 +59,7 @@ describe('Address', function() {
     const script = Script.fromRaw(p2sh);
     const addr = Address.fromScript(script);
     const expectedAddr = '3QJmV3qfvL9SuYo34YihAf3sRCW3qSinyC';
-    assert.strictEqual(addr.toString('main'), expectedAddr);
+    assert.strictEqual(addr.toBase58('main'), expectedAddr);
   });
 
   it('should match mainnet p2sh address obtained from script hash', () => {
@@ -67,7 +67,7 @@ describe('Address', function() {
     const p2sh = Buffer.from(raw, 'hex');
     const addr = Address.fromScripthash(p2sh);
     const expectedAddr = '3QJmV3qfvL9SuYo34YihAf3sRCW3qSinyC';
-    assert.strictEqual(addr.toString('main'), expectedAddr);
+    assert.strictEqual(addr.toBase58('main'), expectedAddr);
   });
 
   it('should match mainnet p2sh address obtained from script 2', () => {
@@ -75,7 +75,7 @@ describe('Address', function() {
     const p2sh = Buffer.from(raw, 'hex');
     const addr = Address.fromScripthash(p2sh);
     const expectedAddr = '3NukJ6fYZJ5Kk8bPjycAnruZkE5Q7UW7i8';
-    assert.strictEqual(addr.toString('main'), expectedAddr);
+    assert.strictEqual(addr.toBase58('main'), expectedAddr);
   });
 
   it('should match testnet p2sh address', () => {
@@ -83,103 +83,236 @@ describe('Address', function() {
     const p2sh = Buffer.from(raw, 'hex');
     const addr = Address.fromScripthash(p2sh);
     const expectedAddr = '2NBFNJTktNa7GZusGbDbGKRZTxdK9VVez3n';
-    assert.strictEqual(addr.toString('testnet'), expectedAddr);
+    assert.strictEqual(addr.toBase58('testnet'), expectedAddr);
   });
 
-  it('should match mainnet segwit p2wpkh v0 address', () => {
-    const raw = '751e76e8199196d454941c45d1b3a323f1433bd6';
-    const p2wpkh = Buffer.from(raw, 'hex');
-    const addr = Address.fromWitnessPubkeyhash(p2wpkh);
-    const expectedAddr = 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4';
-    assert.strictEqual(addr.toString('main'), expectedAddr);
+  // cashaddr
+  it('should match mainnet p2pkh cashaddr', () => {
+    const raw = 'e34cce70c86373273efcc54ce7d2a491bb4a0e84';
+    const p2pkh = Buffer.from(raw, 'hex');
+    const addr = Address.fromPubkeyhash(p2pkh);
+    assert.strictEqual(
+      addr.toString('main'),
+      'bitcoincash:qr35ennsep3hxfe7lnz5ee7j5jgmkjswssk2puzvgv'
+    );
   });
 
-  it('should match mainnet segwit p2pwsh v0 address', () => {
-    const p2wpkh = Buffer.from(''
-                        + '1863143c14c51668'
-                        + '04bd19203356da13'
-                        + '6c985678cd4d27a1'
-                        + 'b8c6329604903262', 'hex');
-    const addr = Address.fromWitnessScripthash(p2wpkh);
-    assert.strictEqual(addr.toString('main'),
-        'bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3');
+  it('should match mainnet p2pkh cashaddr 2', () => {
+    const raw = '0ef030107fd26e0b6bf40512bca2ceb1dd80adaa';
+    const p2pkh = Buffer.from(raw, 'hex');
+    const addr = Address.fromPubkeyhash(p2pkh);
+    assert.strictEqual(
+      addr.toString('main'),
+      'bitcoincash:qq80qvqs0lfxuzmt7sz3909ze6camq9d4gxau4gyg4'
+    );
   });
 
-  it('should match testnet segwit p2wpkh v0 address', () => {
-    const raw = '751e76e8199196d454941c45d1b3a323f1433bd6';
-    const p2wpkh = Buffer.from(raw, 'hex');
-    const addr = Address.fromWitnessPubkeyhash(p2wpkh);
-    const expectedAddr = 'tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx';
-    assert.strictEqual(addr.toString('testnet'), expectedAddr);
+  it('should match testnet p2pkh cashaddr', () => {
+    const raw = '78b316a08647d5b77283e512d3603f1f1c8de68f';
+    const p2pkh = Buffer.from(raw, 'hex');
+    const addr = Address.fromPubkeyhash(p2pkh);
+    const expectedAddr = 'mrX9vMRYLfVy1BnZbc5gZjuyaqH3ZW2ZHz';
+    assert.strictEqual(addr.toBase58('testnet'), expectedAddr);
   });
 
-  it('should match testnet segwit p2pwsh v0 address', () => {
-    const p2wpkh = Buffer.from(''
-                        + '1863143c14c51668'
-                        + '04bd19203356da13'
-                        + '6c985678cd4d27a1'
-                        + 'b8c6329604903262', 'hex');
-    const addr = Address.fromWitnessScripthash(p2wpkh);
-    assert.strictEqual(addr.toString('testnet'),
-        'tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3q0sl5k7');
+  it('should match mainnet p2sh cashaddr obtained from script', () => {
+    const p2sh = Buffer.from(''
+                          + '52410491bba2510912a5bd37da1fb5b1673010e4'
+                          + '3d2c6d812c514e91bfa9f2eb129e1c183329db55'
+                          + 'bd868e209aac2fbc02cb33d98fe74bf23f0c235d'
+                          + '6126b1d8334f864104865c40293a680cb9c020e7'
+                          + 'b1e106d8c1916d3cef99aa431a56d253e69256da'
+                          + 'c09ef122b1a986818a7cb624532f062c1d1f8722'
+                          + '084861c5c3291ccffef4ec687441048d2455d240'
+                          + '3e08708fc1f556002f1b6cd83f992d085097f997'
+                          + '4ab08a28838f07896fbab08f39495e15fa6fad6e'
+                          + 'dbfb1e754e35fa1c7844c41f322a1863d4621353ae','hex');
+    const script = Script.fromRaw(p2sh);
+    const addr = Address.fromScript(script);
+    assert.strictEqual(
+      addr.toString('main'),
+      'bitcoincash:pruptvpkmxamee0f72sq40gm70wfr624zq0yyxtycm'
+    );
   });
 
-  it('should match testnet segwit p2pwsh v0 address 2', () => {
-    const p2wpkh = Buffer.from(''
-                        + '000000c4a5cad462'
-                        + '21b2a187905e5266'
-                        + '362b99d5e91c6ce2'
-                        + '4d165dab93e86433', 'hex');
-    const addr = Address.fromWitnessScripthash(p2wpkh);
-    assert.strictEqual(addr.toString('testnet'),
-        'tb1qqqqqp399et2xygdj5xreqhjjvcmzhxw4aywxecjdzew6hylgvsesrxh6hy');
+  it('should match mainnet p2sh address obtained from script hash', () => {
+    const raw = 'f815b036d9bbbce5e9f2a00abd1bf3dc91e95510';
+    const p2sh = Buffer.from(raw, 'hex');
+    const addr = Address.fromScripthash(p2sh);
+    assert.strictEqual(
+      addr.toString('main'),
+      'bitcoincash:pruptvpkmxamee0f72sq40gm70wfr624zq0yyxtycm'
+    );
   });
 
-  it('should handle invalid segwit hrp', () => {
-    const addr = 'tc1qw508d6qejxtdg4y5r3zarvary0c5xw7kg3g4ty';
+  it('should match mainnet p2sh address obtained from script 2', () => {
+    const raw = 'e8c300c87986efa84c37c0519929019ef86eb5b4';
+    const p2sh = Buffer.from(raw, 'hex');
+    const addr = Address.fromScripthash(p2sh);
+    assert.strictEqual(
+      addr.toString('main'),
+      'bitcoincash:pr5vxqxg0xrwl2zvxlq9rxffqx00sm44ks62zuqyrj'
+    );
+  });
+
+  it('should match testnet p2sh address', () => {
+    const raw = 'c579342c2c4c9220205e2cdc285617040c924a0a';
+    const p2sh = Buffer.from(raw, 'hex');
+    const addr = Address.fromScripthash(p2sh);
+
+    assert.strictEqual(
+      addr.toString('testnet'),
+      'bchtest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pg4x8klehh'
+    );
+  });
+
+  it('should match p2sh address without prefix', () => {
+    const raw = 'c579342c2c4c9220205e2cdc285617040c924a0a';
+    const p2sh = Buffer.from(raw, 'hex');
+    const addrstr = 'przhjdpv93xfygpqtckdc2zkzuzqeyj2pg4x8klehh';
+    const addr = Address.fromString(addrstr, 'testnet');
+
+    assert.strictEqual(addr.type, 1, 'Incorrect type.');
+    assert.bufferEqual(addr.hash, p2sh, 'Incorrect hash.');
+  });
+
+  it('should match mainnet p2pkh cashaddr without prefix', () => {
+    const raw = 'e34cce70c86373273efcc54ce7d2a491bb4a0e84';
+    const p2pkh = Buffer.from(raw, 'hex');
+    const addrstr = 'qr35ennsep3hxfe7lnz5ee7j5jgmkjswssk2puzvgv';
+    const addr = Address.fromString(addrstr, 'main');
+
+    assert.strictEqual(addr.type, 0, 'Incorrect address type.');
+    assert.bufferEqual(addr.hash, p2pkh, 'Incorrect hash.');
+  });
+
+  it('should handle invalid cashaddr prefix', () => {
+    const addr = 'bitcoincas:qrzhjdpv93xfygpqtckdc2zkzuzqeyj2pgkm0jl23k';
     assert.throws(() => Address.fromString(addr, 'main'));
+
+    let err;
+
+    try {
+      Address.fromCashAddr(addr, 'main');
+    } catch (e) {
+      err = e;
+    }
+
+    assert.strictEqual(
+      err.message,
+      'Network mismatch for cashaddr address.'
+    );
   });
 
-  it('should handle invalid segwit checksum', () => {
-    const addr = 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t5';
+  it('should handle invalid cashaddr checksum', () => {
+    const addr = 'bitcoincash:pr5vxqxg0xrwl2zvxlq9rxffqx00sm44ks62zuqyrr';
     assert.throws(() => Address.fromString(addr, 'main'));
+
+    let err;
+
+    try {
+      Address.fromCashAddr(addr, 'main');
+    } catch (e) {
+      err = e;
+    }
+
+    assert.strictEqual(
+      err.message,
+      'Invalid cashaddr checksum.'
+    );
   });
 
-  it('should handle invalid segwit version', () => {
-    const addr = 'BC13W508D6QEJXTDG4Y5R3ZARVARY0C5XW7KN40WF2';
+  it('should handle invalid cashaddr type', () => {
+    const addr = 'bitcoincash:zzhgrdtkaz370lfrlx7fc8rvj5yd5nrn7qq3srezys';
     assert.throws(() => Address.fromString(addr, 'main'));
+
+    let err;
+
+    try {
+      Address.fromCashAddr(addr, 'main');
+    } catch (e) {
+      err = e;
+    }
+
+    assert.strictEqual(
+      err.message,
+      'Not a valid address type.'
+    );
   });
 
-  it('should handle invalid segwit program length', () => {
-    const addr = 'bc1rw5uspcuh';
+  it('should handle invalid cashaddr data length', () => {
+    const addr = 'bitcoincash:qpg4nt2nwm9mm2a6s6gmcmjx2yr7c9kvta';
     assert.throws(() => Address.fromString(addr, 'main'));
+
+    let err;
+
+    try {
+      Address.fromCashAddr(addr, 'main');
+    } catch (e) {
+      err = e;
+    }
+
+    assert.strictEqual(
+      err.message,
+      'Invalid cashaddr data length.'
+    );
   });
 
-  it('should handle invalid segwit program length 2', () => {
-    const addr = 'bc10w508d6qejxtdg4y5r3zarvary0c5xw7kw5'
-               + '08d6qejxtdg4y5r3zarvary0c5xw7kw5rljs90';
+  it('should handle cashaddr mixed case', () => {
+    const addr = 'bitcoincash:pruptvpkmxamee0f7'
+               + '2Sq40gm70wfr624zq0yyxtycm';
     assert.throws(() => Address.fromString(addr, 'main'));
+
+    let err;
+
+    try {
+      Address.fromCashAddr(addr, 'main');
+    } catch (e) {
+      err = e;
+    }
+
+    assert(err, 'Exception error missing.');
+    assert.strictEqual(
+      err.message,
+      'Invalid cashaddr casing.'
+    );
   });
 
-  it('should handle invalid segwit program length for witness v0', () => {
-    const addr = 'tb1pw508d6qejxtdg4y5r3zarqfsj6c3';
+  it('should handle cashaddr zero padding of more than 4 bits', () => {
+    const addr = 'bitcoincash:pruptvpkmxamee0f72sq40gm70wfr624zqqn4vewfdw';
     assert.throws(() => Address.fromString(addr, 'main'));
-  });
 
-  it('should handle segwit mixed case', () => {
-    const addr = 'tb1qrp33g0q5c5txsp9arysrx4k6z'
-               + 'dkfs4nce4xj0gdcccefvpysxf3q0sL5k7';
-    assert.throws(() => Address.fromString(addr, 'main'));
-  });
+    let err;
 
-  it('should handle segwit zero padding of more than 4 bits', () => {
-    const addr = 'tb1pw508d6qejxtdg4y5r3zarqfsj6c3';
-    assert.throws(() => Address.fromString(addr, 'main'));
+    try {
+      Address.fromCashAddr(addr, 'main');
+    } catch (e) {
+      err = e;
+    }
+
+    assert(err, 'Exception error missing.');
+    assert.strictEqual(
+      err.message,
+      'Invalid padding in data.'
+    );
   });
 
   it('should handle segwit non-zero padding in 8-to-5 conversion', () => {
-    const addr = 'tb1qrp33g0q5c5txsp9arysrx4k6'
-               + 'zdkfs4nce4xj0gdcccefvpysxf3pjxtptv';
+    const addr = 'bitcoincash:pruptvpkmxamee0f72sq40gm70wfr624zpu8adj8t6';
     assert.throws(() => Address.fromString(addr, 'main'));
+
+    let err;
+
+    try {
+      Address.fromCashAddr(addr, 'main');
+    } catch (e) {
+      err = e;
+    }
+
+    assert(err, 'Exception error missing.');
+    assert.strictEqual(
+      err.message,
+      'Non zero padding.'
+    );
   });
 });
