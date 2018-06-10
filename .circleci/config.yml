@@ -30,6 +30,13 @@ jobs:
       - run:
           name: Tests with coverage
           command: npm run test-ci
+      - run:
+          name: Install codecov
+          command: npm i codecov
+      - run:
+          name: Submit coverage
+          command: ./node_modules/.bin/codecov
+
   lint:
     docker:
       - image: circleci/node:10.2

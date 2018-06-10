@@ -10,7 +10,6 @@ const {encoding} = require('bufio');
 const assert = require('./util/assert');
 const Amount = require('../lib/btc/amount');
 const fixed = require('../lib/utils/fixed');
-const util = require('../lib/utils/util');
 
 const base58Tests = [
   ['', ''],
@@ -56,7 +55,6 @@ const signed = [
   new I64(0).ineg(),
   new I64(1).ineg()
 ];
-
 
 describe('Utils', function() {
   it('should encode/decode base58', () => {
