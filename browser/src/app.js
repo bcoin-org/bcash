@@ -73,7 +73,6 @@ const node = new FullNode({
 });
 
 const {wdb} = node.require('walletdb');
-wdb.options.witness = true;
 
 window.onunhandledrejection = function onunhandledrejection(event) {
   throw event.reason;

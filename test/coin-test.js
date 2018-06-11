@@ -15,8 +15,10 @@ describe('Coin', function() {
     const [tx] = tx1.getTX();
     const coin = Coin.fromTX(tx, 0, 0);
 
-    assert.strictEqual(coin.getAddress().toString(),
+    assert.strictEqual(coin.getAddress().toBase58(),
       '3KUER9kZ693d5FQgvmr5qNDKnSpP9nXv9v');
+    assert.strictEqual(coin.getAddress().toString(),
+      'bitcoincash:prpswjgjta5egualmyvexu5tgzg2023rzc95lgsupf');
     assert.strictEqual(coin.value, 5000000);
     assert.strictEqual(coin.getType(), 'multisig');
     assert.strictEqual(coin.version, 1);
@@ -30,8 +32,10 @@ describe('Coin', function() {
   it('should instantiate from raw', () => {
     const coin = Coin.fromRaw(coin1);
 
-    assert.strictEqual(coin.getAddress().toString(),
+    assert.strictEqual(coin.getAddress().toBase58(),
       '3KUER9kZ693d5FQgvmr5qNDKnSpP9nXv9v');
+    assert.strictEqual(coin.getAddress().toString(),
+      'bitcoincash:prpswjgjta5egualmyvexu5tgzg2023rzc95lgsupf');
     assert.strictEqual(coin.value, 5000000);
     assert.strictEqual(coin.getType(), 'multisig');
     assert.strictEqual(coin.version, 1);

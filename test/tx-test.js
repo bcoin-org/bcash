@@ -621,7 +621,7 @@ describe('TX', function() {
   }
 
   it('should count sigops for multisig', () => {
-    const flags = Script.flags.VERIFY_WITNESS | Script.flags.VERIFY_P2SH;
+    const flags = Script.flags.VERIFY_P2SH;
     const key = KeyRing.generate();
     const pub = key.publicKey;
 
@@ -640,7 +640,7 @@ describe('TX', function() {
   });
 
   it('should count sigops for p2sh multisig', () => {
-    const flags = Script.flags.VERIFY_WITNESS | Script.flags.VERIFY_P2SH;
+    const flags = Script.flags.VERIFY_P2SH;
     const key = KeyRing.generate();
     const pub = key.publicKey;
 
