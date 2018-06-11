@@ -68,7 +68,7 @@ See LICENSE for more info.
 [changelog]: ./CHANGELOG.md
 
 
-[coverage-status-img]: https://coveralls.io/repos/github/bcoin-org/bcash/badge.svg?branch=staging
-[coverage-status-url]: https://coveralls.io/github/bcoin-org/bcash?branch=staging
+[coverage-status-img]: https://codecov.io/gh/bcoin-org/bcash/badge.svg?branch=staging
+[coverage-status-url]: https://codecov.io/gh/bcoin-org/bcash?branch=staging
 [circleci-status-img]: https://circleci.com/gh/bcoin-org/bcash/tree/staging.svg?style=shield
 [circleci-status-url]: https://circleci.com/gh/bcoin-org/bcash/tree/staging
