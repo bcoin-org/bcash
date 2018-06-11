@@ -62,10 +62,10 @@ See LICENSE for more info.
 
 [bcoin]: https://bcoin.io
 [purse]: https://purse.io
-[guide]: https://github.com/bcoin-org/bcash/blob/master/docs/Beginner's-Guide.md
 [freenode]: https://freenode.net/
 [irc]: irc://irc.freenode.net/bcoin
-[changelog]: https://github.com/bcoin-org/bcash/blob/master/CHANGELOG.md
+[guide]: ./docs/Beginner's-Guide.md
+[changelog]: ./CHANGELOG.md
 
 
 [coverage-status-img]: https://coveralls.io/repos/github/bcoin-org/bcash/badge.svg?branch=staging
