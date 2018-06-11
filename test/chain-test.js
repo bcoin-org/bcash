@@ -106,7 +106,7 @@ chain.on('disconnect', (entry, block) => {
 });
 
 describe('Chain', function() {
-  this.timeout(45000);
+  this.timeout(60000);
 
   it('should open chain and miner', async () => {
     await chain.open();
@@ -585,6 +585,9 @@ describe('Chain', function() {
   });
 
   it('should mine a big block', async () => {
+    const oldMaxForkBlockSize = consensus.MAX_FORK_BLOCK_SIZE;
+    consensus.MAX_FORK_BLOCK_SIZE = 4000000;
+
     const OPRETURN = Script.fromNulldata(Buffer.alloc(70, 1));
     const start = chain.height - 2000;
     const end = chain.height - 200;
@@ -592,6 +595,17 @@ describe('Chain', function() {
     const maxSigops = consensus.maxBlockSigops(consensus.MAX_FORK_BLOCK_SIZE);
     const perTxSigops = Math.floor((maxSigops - 1000) / 1801) - 2;
     const perTxSize = Math.floor(consensus.MAX_FORK_BLOCK_SIZE / 1801);
+
+    const mtx = new MTX();
+
+    const fillSize = perTxSize - (51 + 107 + (perTxSigops * 34));
+    const opreturns = Math.floor(fillSize / 81);
+
+    for (let j = 0; j < perTxSigops; j++)
+      mtx.addOutput(wallet.getAddress(), 1);
+
+    for (let j = 0; j < opreturns; j++)
+      mtx.addOutput({ script: OPRETURN });
 
     // fill max tx
     // with 1801 transactions,
@@ -604,26 +618,17 @@ describe('Chain', function() {
       const block = await chain.getBlock(i);
       const cb = block.txs[0]; // 117 bytes
 
-      const mtx = new MTX();
-      mtx.addTX(cb, 0); // 51 bytes
-
-      const fillSize = perTxSize - (51 + 107 + (perTxSigops * 34));
-      const opreturns = Math.floor(fillSize / 81);
-
-      for (let j = 0; j < perTxSigops; j++)
-        mtx.addOutput(wallet.getAddress(), 1); // 34 bytes
-
-      for (let j = 0; j < opreturns; j++)
-        mtx.addOutput({ script: OPRETURN });
-
-      wallet.sign(mtx); // 107 bytes
-
-      job.pushTX(mtx.toTX());
+      const mtxi = mtx.clone();
+      mtxi.addTX(cb, 0); // 51 bytes
+      wallet.sign(mtxi); // 107 bytes
+      job.pushTX(mtxi.toTX());
     }
 
     job.refresh();
 
     assert.strictEqual(await mineBlock(job), 'OK');
+
+    consensus.MAX_FORK_BLOCK_SIZE = oldMaxForkBlockSize;
   });
 
   it('should fail to connect bad versions', async () => {

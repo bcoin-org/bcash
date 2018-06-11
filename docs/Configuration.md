@@ -99,5 +99,7 @@ If enabled you should also enable `wallet-auth` and set `api-key`.
 
 ## Sample Config File
 
-See https://github.com/bcoin-org/bcash/blob/master/etc/sample.conf
-and https://github.com/bcoin-org/bcash/blob/master/etc/sample.wallet.conf
+See [Bcoin Configuration Example][sample-conf] and [Bcoin Wallet Configuration Example][sample-wallet-conf]
+
+[sample-conf]: ../etc/sample.conf
+[sample-wallet-conf]: ../etc/sample.wallet.conf

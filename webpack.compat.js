@@ -9,11 +9,11 @@ const env = process.env;
 module.exports = {
   target: 'web',
   entry: {
-    'bcoin': './lib/bcoin',
-    'bcoin-worker': './lib/workers/worker'
+    'bcash': './lib/bcash',
+    'bcash-worker': './lib/workers/worker'
   },
   output: {
-    library: 'bcoin',
+    library: 'bcash',
     libraryTarget: 'umd',
     path: Path.join(__dirname, 'browser'),
     filename: '[name].js'
@@ -33,7 +33,7 @@ module.exports = {
       'process.env.BCASH_NETWORK':
         str(env.BCASH_NETWORK || 'main'),
       'process.env.BCASH_WORKER_FILE':
-        str(env.BCASH_WORKER_FILE || '/bcoin-worker.js')
+        str(env.BCASH_WORKER_FILE || '/bcash-worker.js')
     }),
     new UglifyJsPlugin()
   ]

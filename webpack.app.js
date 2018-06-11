@@ -25,7 +25,7 @@ module.exports = {
       'process.env.BCASH_NETWORK':
         str(env.BCASH_NETWORK || 'main'),
       'process.env.BCASH_WORKER_FILE':
-        str(env.BCASH_WORKER_FILE || '/bcoin-worker.js')
+        str(env.BCASH_WORKER_FILE || '/bcash-worker.js')
     }),
     new UglifyJsPlugin()
   ]

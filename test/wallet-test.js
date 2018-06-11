@@ -1440,6 +1440,7 @@ describe('Wallet', function() {
     await wdb.addBlock(nextBlock(wdb), [t3.toTX()]);
 
     assert.strictEqual((await bob.getBalance()).unconfirmed, 30000);
+    await wdb.close();
   });
 
   it('should recover from a missed tx and double spend', async () => {
@@ -1511,6 +1512,7 @@ describe('Wallet', function() {
     await wdb.addBlock(nextBlock(wdb), [t3.toTX()]);
 
     assert.strictEqual((await bob.getBalance()).unconfirmed, 30000);
+    await wdb.close();
   });
 
   it('should remove a wallet', async () => {
@@ -1522,7 +1524,8 @@ describe('Wallet', function() {
     assert(!await wdb.get('alice100'));
   });
 
-  it('should cleanup', () => {
+  it('should cleanup', async () => {
     consensus.COINBASE_MATURITY = 100;
+    await wdb.close();
   });
 });
