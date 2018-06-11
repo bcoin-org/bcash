@@ -101,7 +101,6 @@ bcoin-cli commands are split into 3 categories: cli, rpc, and wallet.
 - `account get [account-name]`: Get account details.
 - `address`: Derive new receiving address.
 - `change`: Derive new change address.
-- `nested`: Derive new nested address.
 - `retoken`: Create new api key.
 - `send [address] [value]`: Send transaction.
 - `mktx [address] [value]`: Create transaction.
@@ -161,7 +160,6 @@ Bcash implements nearly all bitcoind calls along with some custom calls.
 - `getinfo`
 - `validateaddress`
 - `createmultisig`
-- `createwitnessaddress`
 - `verifymessage`
 - `signmessagewithprivkey`
 - `setmocktime`
@@ -188,7 +186,6 @@ Bcash implements nearly all bitcoind calls along with some custom calls.
 - `resendwallettransactions`
 - `abandontransaction`
 - `addmultisigaddress`
-- `addwitnessaddress`
 - `backupwallet`
 - `dumpprivkey`
 - `dumpwallet`
