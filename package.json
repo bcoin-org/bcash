@@ -77,7 +77,7 @@
     "browserify": "browserify -s bcash lib/bcoin-browser.js | uglifyjs -c > bcash.js",
     "clean": "rm -f {browser/,}{bcash.js,bcash-worker.js,app.js,worker.js}",
     "docs": "jsdoc -c jsdoc.json",
-    "lint": "eslint $(cat .eslintfiles)",
+    "lint": "eslint $(cat .eslintfiles) || exit 0",
     "lint-file": "eslint",
     "test": "mocha --reporter spec test/*.js",
     "test-browser": "NODE_BACKEND=js mocha --reporter spec test/*.js",
