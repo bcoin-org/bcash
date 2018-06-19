@@ -168,7 +168,7 @@ describe('Difficulty', function() {
     let bits = consensus.toCompact(target);
 
     // Enable DAA Deployment
-    chain.network.block.daaheight = 0;
+    chain.state.daa = true;
     const blocks = {};
 
     blocks[0] = new ChainEntry();
