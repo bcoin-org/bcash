@@ -31,6 +31,8 @@ const tx3 = common.readTX('tx3');
 const tx4 = common.readTX('tx4');
 const tx6 = common.readTX('tx6');
 const tx7 = common.readTX('tx7');
+const tx8 = common.readTX('tx8');
+const tx9 = common.readTX('tx9');
 
 const MAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER;
 const MAX_SAFE_ADDITION = 0xfffffffffffff;
@@ -343,6 +345,17 @@ describe('TX', function() {
       });
     }
   }
+
+  it('should include the raw data of only one transaction', () => {
+    const [tx1] = tx8.getTX();
+    const [tx2] = tx9.getTX();
+    const raw = Buffer.concat([tx1.toRaw(), tx2.toRaw()]);
+
+    const tx = TX.fromRaw(raw);
+    tx.refresh();
+
+    assert.bufferEqual(tx.toRaw(), tx1.toRaw());
+  });
 
   it('should fail on >51 bit coin values', () => {
     const [input, view] = createInput(consensus.MAX_MONEY + 1);

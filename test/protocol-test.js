@@ -8,15 +8,15 @@ const assert = require('./util/assert');
 const Network = require('../lib/protocol/network');
 const util = require('../lib/utils/util');
 const NetAddress = require('../lib/net/netaddress');
-const TX = require('../lib/primitives/tx');
 const Framer = require('../lib/net/framer');
 const Parser = require('../lib/net/parser');
 const packets = require('../lib/net/packets');
-const common = require('./util/common');
+const common = require('../lib/net/common');
+const InvItem = require('../lib/primitives/invitem');
+const consensus = require('../lib/protocol/consensus');
+const invTypes = InvItem.types;
+const MemBlock = require('../lib/primitives/memblock');
 const network = Network.get('main');
-
-const tx8 = common.readTX('tx8');
-const tx9 = common.readTX('tx9');
 
 describe('Protocol', function() {
   const pkg = require('../lib/pkg');
@@ -116,14 +116,56 @@ describe('Protocol', function() {
     assert.strictEqual(payload.items[1].port, hosts[1].port);
   });
 
-  it('should include the raw data of only one transaction', () => {
-    const [tx1] = tx8.getTX();
-    const [tx2] = tx9.getTX();
-    const raw = Buffer.concat([tx1.toRaw(), tx2.toRaw()]);
+  it('should not limit block like packet size to MAX_MESSAGE', (cb) => {
+    const raw = Buffer.alloc(consensus.MAX_FORK_BLOCK_SIZE * 2);
+    const block1 = MemBlock.fromRaw(raw);
+    const packet = new packets.BlockPacket(block1);
 
-    const tx = TX.fromRaw(raw);
-    tx.refresh();
+    assert(raw.length > common.MAX_MESSAGE);
+    parser.once('packet', (p) => {
+      assert.strictEqual(packet.cmd, p.cmd);
+      cb();
+    });
 
-    assert.bufferEqual(tx.toRaw(), tx1.toRaw());
+    const rawpacket = framer.packet(packet.cmd, packet.toRaw());
+    parser.feed(rawpacket);
+  });
+
+  it('should limit block like packet size to MAX_FORK_BLOCK_SIZE * 2', (cb) => {
+    const packetsize = consensus.MAX_FORK_BLOCK_SIZE * 2 + 1;
+    const raw = Buffer.alloc(packetsize);
+    const block1 = MemBlock.fromRaw(raw);
+    const packet = new packets.BlockPacket(block1);
+
+    assert(raw.length > common.MAX_MESSAGE);
+
+    parser.once('error', (e) => {
+      assert.strictEqual(e.message, `Packet length too large: ${packetsize}.`);
+      cb();
+    });
+
+    const rawpacket = framer.packet(packet.cmd, packet.toRaw());
+    parser.feed(rawpacket);
+  });
+
+  it('should limit packet size to MAX_MESSAGE', (cb) => {
+    const DUMMY = Buffer.alloc(32);
+    const items = [];
+
+    for (let i = 0; i < 50000; i++)
+      items.push(new InvItem(invTypes.BLOCK, DUMMY));
+
+    const getDataPacket = new packets.GetDataPacket(items);
+    const size = getDataPacket.getSize();
+
+    assert.strictEqual(getDataPacket.isOversized(), true);
+
+    parser.once('error', (e) => {
+      assert.strictEqual(e.message, `Packet length too large: ${size}.`);
+
+      cb();
+    });
+    const raw = framer.packet(getDataPacket.cmd, getDataPacket.toRaw());
+    parser.feed(raw);
   });
 });
