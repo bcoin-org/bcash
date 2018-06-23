@@ -213,9 +213,16 @@ async function testP2SH() {
 describe('Wallet', function() {
   this.timeout(5000);
 
-  it('should open walletdb', async () => {
-    consensus.COINBASE_MATURITY = 0;
+  before(async () => {
     await wdb.open();
+  });
+
+  after(async () => {
+    await wdb.close();
+  });
+
+  it('should open walletdb', () => {
+    consensus.COINBASE_MATURITY = 0;
   });
 
   it('should generate new key and address', async () => {
@@ -1506,8 +1513,69 @@ describe('Wallet', function() {
     assert(!await wdb.get('alice100'));
   });
 
-  it('should cleanup', async () => {
+  const keyTypes = [
+    {
+      name: 'receive',
+      method: 'createReceive',
+      branch: 0
+    },
+    {
+      name: 'change',
+      method: 'createChange',
+      branch: 1
+    }
+  ];
+
+  for (const type of keyTypes) {
+    it(`should create ${type.name} addresses`, async () => {
+      const account = 0;
+      const wallet = await wdb.create();
+      const addresses = new Set();
+
+      for (let i = 0; i < 100; i++) {
+        const key = await wallet[type.method](account);
+        addresses.add(key.getAddress('string'));
+        assert.strictEqual(key.account, account);
+        assert.strictEqual(key.branch, type.branch);
+        assert.strictEqual(key.index, i + 1);
+      }
+
+      assert.strictEqual(addresses.size, 100);
+    });
+
+    it(`should create ${type.name} addresses and get their keys`, async () => {
+      const account = 0;
+      const wallet = await wdb.create();
+
+      const addresses = new Set();
+
+      for (let i = 0; i < 100; i++) {
+        const key1 = await wallet[type.method](account);
+        const address = key1.getAddress();
+
+        assert(key1, `Could not get ${type.name}`);
+        addresses.add(address);
+
+        assert.strictEqual(key1.account, account);
+        assert.strictEqual(key1.branch, type.branch);
+        assert.strictEqual(key1.index, i + 1);
+
+        const key2 = await wallet.getKey(address);
+        assert(key2, `Could not get key for ${address.toString()}` +
+          `, Key: xpub/${type.branch}/${i+1}`);
+
+        assert.strictEqual(key2.name, key1.name);
+        assert.strictEqual(key2.account, key1.account);
+        assert.strictEqual(key2.branch, key1.branch);
+        assert.bufferEqual(key2.publicKey, key1.publicKey);
+        assert.strictEqual(key2.getType(), key1.getType());
+      }
+
+      assert.strictEqual(addresses.size, 100);
+    });
+  }
+
+  it('should cleanup', () => {
     consensus.COINBASE_MATURITY = 100;
-    await wdb.close();
   });
 });
