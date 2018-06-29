@@ -24,7 +24,7 @@ describe('Protocol', function() {
   let parser, framer;
 
   beforeEach(() => {
-    parser = new Parser();
+    parser = new Parser('main', () => consensus.MAX_FORK_BLOCK_SIZE);
     framer = new Framer();
   });
 
