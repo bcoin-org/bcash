@@ -92,7 +92,7 @@ describe('Difficulty', function() {
       const p2 = blocks[random(blocks.length)];
 
       const tdiff = chain.getProofTime(p1, p2);
-      assert(tdiff === p1.time - p2.time, 'wrong time diff.');
+      assert.ok(tdiff ===  p1.time - p2.time);
     }
   });
 
