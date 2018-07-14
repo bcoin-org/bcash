@@ -7,6 +7,7 @@
 'use strict';
 
 const assert = require('assert');
+const {BufferMap, BufferSet} = require('buffer-map');
 const Network = require('../../lib/protocol/network');
 const MTX = require('../../lib/primitives/mtx');
 const HD = require('../../lib/hd/hd');
@@ -25,10 +26,10 @@ class MemWallet {
     this.changeDepth = 1;
     this.receive = null;
     this.change = null;
-    this.map = new Set();
-    this.coins = new Map();
-    this.spent = new Map();
-    this.paths = new Map();
+    this.map = new BufferSet();
+    this.coins = new BufferMap();
+    this.spent = new BufferMap();
+    this.paths = new BufferMap();
     this.balance = 0;
     this.txs = 0;
     this.filter = BloomFilter.fromRate(1000000, 0.001, -1);
@@ -96,8 +97,8 @@ class MemWallet {
   createReceive() {
     const index = this.receiveDepth++;
     const key = this.deriveReceive(index);
-    const hash = key.getHash('hex');
-    this.filter.add(hash, 'hex');
+    const hash = key.getHash();
+    this.filter.add(hash);
     this.paths.set(hash, new Path(hash, 0, index));
     this.receive = key;
     return key;
@@ -106,8 +107,8 @@ class MemWallet {
   createChange() {
     const index = this.changeDepth++;
     const key = this.deriveChange(index);
-    const hash = key.getHash('hex');
-    this.filter.add(hash, 'hex');
+    const hash = key.getHash();
+    this.filter.add(hash);
     this.paths.set(hash, new Path(hash, 1, index));
     this.change = key;
     return key;
@@ -237,7 +238,7 @@ class MemWallet {
   }
 
   addTX(tx, height) {
-    const hash = tx.hash('hex');
+    const hash = tx.hash();
     let result = false;
 
     if (height == null)
@@ -261,7 +262,7 @@ class MemWallet {
 
     for (let i = 0; i < tx.outputs.length; i++) {
       const output = tx.outputs[i];
-      const addr = output.getHash('hex');
+      const addr = output.getHash();
 
       if (!addr)
         continue;
@@ -288,7 +289,7 @@ class MemWallet {
   }
 
   removeTX(tx, height) {
-    const hash = tx.hash('hex');
+    const hash = tx.hash();
     let result = false;
 
     if (!this.map.has(hash))
@@ -337,7 +338,7 @@ class MemWallet {
       if (!coin)
         continue;
 
-      const addr = coin.getHash('hex');
+      const addr = coin.getHash();
 
       if (!addr)
         continue;

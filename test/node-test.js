@@ -117,10 +117,10 @@ describe('Node', function() {
 
       await chain.add(block2);
 
-      assert.strictEqual(chain.tip.hash, block1.hash('hex'));
+      assert.bufferEqual(chain.tip.hash, block1.hash());
 
-      tip1 = await chain.getEntry(block1.hash('hex'));
-      tip2 = await chain.getEntry(block2.hash('hex'));
+      tip1 = await chain.getEntry(block1.hash());
+      tip2 = await chain.getEntry(block2.hash());
 
       assert(tip1);
       assert(tip2);
@@ -164,7 +164,7 @@ describe('Node', function() {
     await chain.add(block);
 
     assert(forked);
-    assert.strictEqual(chain.tip.hash, block.hash('hex'));
+    assert.bufferEqual(chain.tip.hash, block.hash());
     assert(chain.tip.chainwork.gt(tip1.chainwork));
   });
 
@@ -192,9 +192,9 @@ describe('Node', function() {
 
     await chain.add(block);
 
-    const entry = await chain.getEntry(block.hash('hex'));
+    const entry = await chain.getEntry(block.hash());
     assert(entry);
-    assert.strictEqual(chain.tip.hash, entry.hash);
+    assert.bufferEqual(chain.tip.hash, entry.hash);
 
     const result = await chain.isMainChain(entry);
     assert(result);
@@ -248,7 +248,7 @@ describe('Node', function() {
     const tx = block2.txs[1];
     const output = Coin.fromTX(tx, 1, chain.height);
 
-    const coin = await chain.getCoin(tx.hash('hex'), 1);
+    const coin = await chain.getCoin(tx.hash(), 1);
 
     assert.bufferEqual(coin.toRaw(), output.toRaw());
   });
@@ -273,7 +273,14 @@ describe('Node', function() {
     {
       const tips = await chain.db.getTips();
 
-      assert.notStrictEqual(tips.indexOf(chain.tip.hash), -1);
+      let index = -1;
+
+      for (let i = 0; i < tips.length; i++) {
+        if (tips[i].equals(chain.tip.hash))
+          index = i;
+      }
+
+      assert.notStrictEqual(index, -1);
       assert.strictEqual(tips.length, 2);
     }
 
@@ -282,7 +289,14 @@ describe('Node', function() {
     {
       const tips = await chain.db.getTips();
 
-      assert.notStrictEqual(tips.indexOf(chain.tip.hash), -1);
+      let index = -1;
+
+      for (let i = 0; i < tips.length; i++) {
+        if (tips[i].equals(chain.tip.hash))
+          index = i;
+      }
+
+      assert.notStrictEqual(index, -1);
       assert.strictEqual(tips.length, 1);
     }
   });
@@ -533,7 +547,7 @@ describe('Node', function() {
 
     assert(!json.error);
     assert.strictEqual(json.result, null);
-    assert.strictEqual(node.chain.tip.hash, block.hash('hex'));
+    assert.bufferEqual(node.chain.tip.hash, block.hash());
   });
 
   it('should validate an address', async () => {
@@ -693,7 +707,7 @@ describe('Node', function() {
     await chain.add(block);
 
     const tx = block.txs[0];
-    const hash = tx.hash('hex');
+    const hash = tx.hash();
     const hasTX = await node.hasTX(hash);
 
     assert.strictEqual(hasTX, true);

@@ -68,7 +68,7 @@ function parseTXTest(data) {
   const view = new CoinView();
 
   for (const [txid, index, str, amount] of coins) {
-    const hash = util.revHex(txid);
+    const hash = util.fromRev(txid);
     const script = Script.fromString(str);
     const value = parseInt(amount || '0', 10);
 
@@ -136,7 +136,7 @@ function parseSighashTest(data) {
 }
 
 function createInput(value, view) {
-  const hash = random.randomBytes(32).toString('hex');
+  const hash = random.randomBytes(32);
 
   const input = {
     prevout: {
@@ -179,7 +179,7 @@ function sigopContext(scriptSig, scriptPubkey) {
     spend.version = 1;
 
     const input = new Input();
-    input.prevout.hash = fund.hash('hex');
+    input.prevout.hash = fund.hash();
     input.prevout.index = 0;
     input.script = scriptSig;
     spend.inputs.push(input);
@@ -325,22 +325,19 @@ describe('TX', function() {
           subscript = script.getSubscript(0).removeSeparators();
 
         const reghash = tx.signatureHash(index, subscript, 0, type);
-        const rreg = util.revHex(regularHash);
 
         const oldhash = tx.signatureHash(index, subscript, 0, type, 0);
-        const rold = util.revHex(noforkidHash);
 
         const repflags = Script.flags.VERIFY_SIGHASH_FORKID
           | Script.flags.VERIFY_REPLAY_PROTECTION;
 
         const rephash = tx.signatureHash(index, subscript, 0, type, repflags);
-        const rrph = util.revHex(replayProtectedHash);
 
-        assert.strictEqual(reghash.toString('hex'), rreg,
+        assert.strictEqual(util.revHex(reghash), regularHash,
           'Regular sighash was not correct.');
-        assert.strictEqual(oldhash.toString('hex'), rold,
+        assert.strictEqual(util.revHex(oldhash), noforkidHash,
           'No Fork ID sighash was not correct.');
-        assert.strictEqual(rephash.toString('hex'), rrph,
+        assert.strictEqual(util.revHex(rephash), replayProtectedHash,
           'Replay protected hash was not correct.'
         );
       });
@@ -771,14 +768,11 @@ describe('TX', function() {
     ];
 
     const hashesBuf = tx.getHashes(view);
-    const hashesHex = tx.getHashes(view, 'hex');
 
     assert.strictEqual(hashes.length, hashesBuf.length);
-    assert.strictEqual(hashes.length, hashesHex.length);
 
     hashes.forEach((hash, i) => {
       assert.bufferEqual(hash, hashesBuf[i]);
-      assert.strictEqual(hash.toString('hex'), hashesHex[i]);
     });
   });
 
@@ -791,14 +785,11 @@ describe('TX', function() {
     ];
 
     const hashesBuf = tx.getInputHashes(view);
-    const hashesHex = tx.getInputHashes(view, 'hex');
 
     assert.strictEqual(inputHashes.length, hashesBuf.length);
-    assert.strictEqual(inputHashes.length, hashesHex.length);
 
     inputHashes.forEach((hash, i) => {
       assert.bufferEqual(hash, hashesBuf[i]);
-      assert.strictEqual(hash.toString('hex'), hashesHex[i]);
     });
   });
 
@@ -812,14 +803,11 @@ describe('TX', function() {
     ];
 
     const hashesBuf = tx.getOutputHashes();
-    const hashesHex = tx.getOutputHashes('hex');
 
     assert.strictEqual(outputHashes.length, hashesBuf.length);
-    assert.strictEqual(outputHashes.length, hashesHex.length);
 
     outputHashes.forEach((hash, i) => {
       assert.bufferEqual(hash, hashesBuf[i]);
-      assert.strictEqual(hash.toString('hex'), hashesHex[i]);
     });
   });
 
@@ -835,7 +823,7 @@ describe('TX', function() {
 
     assert(expectedPrevouts.length, prevouts.length);
     expectedPrevouts.forEach((prevout, i) => {
-      assert.strictEqual(prevout, prevouts[i]);
+      assert.strictEqual(prevout, prevouts[i].toString('hex'));
     });
   });
 
@@ -918,7 +906,9 @@ describe('TX', function() {
     // hack for ChainEntry
     const entry = {
       height: 1000,
-      hash: 'c82d447db6150d2308d9571c19bc3dc6efde97a8227d9e57bc77ec0900000000',
+      hash: Buffer.from(
+        'c82d447db6150d2308d9571c19bc3dc6efde97a8227d9e57bc77ec0900000000',
+        'hex'),
       time: 1365870306
     };
     const network = 'testnet';

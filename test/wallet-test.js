@@ -55,9 +55,9 @@ function fakeBlock(height) {
   const root = hash256.digest(fromU32((height | 0x80000000) >>> 0));
 
   return {
-    hash: hash.toString('hex'),
-    prevBlock: prev.toString('hex'),
-    merkleRoot: root.toString('hex'),
+    hash: hash,
+    prevBlock: prev,
+    merkleRoot: root,
     time: 500000000 + (height * (10 * 60)),
     bits: 0,
     nonce: 0,
@@ -66,7 +66,7 @@ function fakeBlock(height) {
 }
 
 function dummyInput() {
-  const hash = random.randomBytes(32).toString('hex');
+  const hash = random.randomBytes(32);
   return Input.fromOutpoint(new Outpoint(hash, 0));
 }
 
@@ -375,7 +375,7 @@ describe('Wallet', function() {
 
       const txs = await alice.getHistory();
       assert(txs.some((wtx) => {
-        return wtx.hash === f1.hash('hex');
+        return wtx.hash.equals(f1.hash());
       }));
     }
 
@@ -385,7 +385,7 @@ describe('Wallet', function() {
 
       const txs = await bob.getHistory();
       assert(txs.some((wtx) => {
-        return wtx.tx.hash('hex') === f1.hash('hex');
+        return wtx.tx.hash().equals(f1.hash());
       }));
     }
 
@@ -405,7 +405,7 @@ describe('Wallet', function() {
 
       const txs = await alice.getHistory();
       assert(txs.some((wtx) => {
-        return wtx.hash === f1.hash('hex');
+        return wtx.hash.equals(f1.hash());
       }));
     }
 
@@ -416,7 +416,7 @@ describe('Wallet', function() {
 
       const txs = await bob.getHistory();
       assert(txs.some((wtx) => {
-        return wtx.tx.hash('hex') === f1.hash('hex');
+        return wtx.tx.hash().equals(f1.hash());
       }));
     }
   });
@@ -566,7 +566,7 @@ describe('Wallet', function() {
 
       const txs = await alice.getHistory();
       assert(txs.some((wtx) => {
-        return wtx.tx.hash('hex') === f1.hash('hex');
+        return wtx.tx.hash().equals(f1.hash());
       }));
     }
 
@@ -576,7 +576,7 @@ describe('Wallet', function() {
 
       const txs = await bob.getHistory();
       assert(txs.some((wtx) => {
-        return wtx.tx.hash('hex') === f1.hash('hex');
+        return wtx.tx.hash().equals(f1.hash());
       }));
     }
 
@@ -662,7 +662,7 @@ describe('Wallet', function() {
 
     // Coinbase
     const t1 = new MTX();
-    t1.addOutpoint(new Outpoint(consensus.NULL_HASH, 0));
+    t1.addOutpoint(new Outpoint(consensus.ZERO_HASH, 0));
     t1.addOutput(await alice.receiveAddress(), 5460);
     t1.addOutput(await alice.receiveAddress(), 5460);
     t1.addOutput(await alice.receiveAddress(), 5460);
@@ -1229,9 +1229,9 @@ describe('Wallet', function() {
 
     await wallet.importKey('default', key, 'test');
 
-    const wkey = await wallet.getKey(key.getHash('hex'));
+    const wkey = await wallet.getKey(key.getHash());
 
-    assert.strictEqual(wkey.getHash('hex'), key.getHash('hex'));
+    assert.bufferEqual(wkey.getHash(), key.getHash());
 
     // Coinbase
     const t1 = new MTX();
@@ -1244,9 +1244,9 @@ describe('Wallet', function() {
 
     await wdb.addTX(t1.toTX());
 
-    const wtx = await wallet.getTX(t1.hash('hex'));
+    const wtx = await wallet.getTX(t1.hash());
     assert(wtx);
-    assert.strictEqual(t1.hash('hex'), wtx.hash);
+    assert.bufferEqual(t1.hash(), wtx.hash);
 
     const options = {
       rate: 10000,
@@ -1261,7 +1261,7 @@ describe('Wallet', function() {
     const t2 = await wallet.createTX(options);
     await wallet.sign(t2);
     assert(t2.verify());
-    assert.strictEqual(t2.inputs[0].prevout.hash, wtx.hash);
+    assert.bufferEqual(t2.inputs[0].prevout.hash, wtx.hash);
 
     importedWallet = wallet;
     importedKey = key;
@@ -1277,10 +1277,10 @@ describe('Wallet', function() {
 
     await wallet.importKey('default', pub);
 
-    const path = await wallet.getPath(pub.getHash('hex'));
-    assert.strictEqual(path.hash, pub.getHash('hex'));
+    const path = await wallet.getPath(pub.getHash());
+    assert.bufferEqual(path.hash, pub.getHash());
 
-    const wkey = await wallet.getKey(pub.getHash('hex'));
+    const wkey = await wallet.getKey(pub.getHash());
     assert(wkey);
   });
 
@@ -1293,11 +1293,11 @@ describe('Wallet', function() {
 
     await wallet.importAddress('default', key.getAddress());
 
-    const path = await wallet.getPath(key.getHash('hex'));
+    const path = await wallet.getPath(key.getHash());
     assert(path);
-    assert.strictEqual(path.hash, key.getHash('hex'));
+    assert.bufferEqual(path.hash, key.getHash());
 
-    const wkey = await wallet.getKey(key.getHash('hex'));
+    const wkey = await wallet.getKey(key.getHash());
     assert(!wkey);
   });
 
@@ -1367,7 +1367,7 @@ describe('Wallet', function() {
 
     const key = await wallet.getKey(addr);
     assert(key);
-    assert.strictEqual(key.getHash('hex'), addr.getHash('hex'));
+    assert.bufferEqual(key.getHash(), addr.getHash());
   });
 
   it('should recover from a missed tx', async () => {
