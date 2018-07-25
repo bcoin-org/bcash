@@ -19,6 +19,7 @@ const Input = require('../lib/primitives/input');
 const CoinView = require('../lib/coins/coinview');
 const KeyRing = require('../lib/primitives/keyring');
 const Address = require('../lib/primitives/address');
+const policy = require('../lib/protocol/policy');
 const common = require('./util/common');
 
 const validTests = require('./data/tx-valid.json');
@@ -970,5 +971,23 @@ describe('TX', function() {
     const value2 = mtx2.getInputValue();
 
     assert.strictEqual(value1, value2);
+  });
+
+  it('should handle nulldata limit', () => {
+    const [input] = createInput(consensus.MAX_MONEY);
+    const tx = new TX({
+      version: 1,
+      inputs: [input],
+      outputs: [{
+        script: Script.fromNulldata(random.randomBytes(policy.MAX_OP_RETURN)),
+        value: consensus.MAX_MONEY
+      }],
+      locktime: 0
+    });
+    assert.ok(tx.isSane());
+    assert.ok(tx.isStandard());
+
+    assert.throws(() => Script.fromNulldata(
+      random.randomBytes(policy.MAX_OP_RETURN  + 1)));
   });
 });
