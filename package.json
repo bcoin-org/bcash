@@ -1,6 +1,6 @@
 {
   "name": "bcash",
-  "version": "1.0.0",
+  "version": "1.0.2-beta",
   "description": "Bitcoin cash bike-shed",
   "license": "MIT",
   "repository": "git://github.com/bcoin-org/bcash.git",
