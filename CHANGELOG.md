@@ -38,6 +38,7 @@ An index can be dropped by just deleting the corresponding database.
   + `getMeta(hash)`
   + `getTX(hash)`
   + `hasTX(hash)`
+  + `getSpentView(tx)`
 
   `node.addrindex` implements:
 
@@ -47,9 +48,6 @@ An index can be dropped by just deleting the corresponding database.
   + `getMetaByAddress(addrs)`
 
   Using these methods on the chain is deprecated.
-
-
-- `__/lib/blockchain/chain__` - `getSpentView` accepts a `TXMeta` insted of `TX`
 
 ## v1.0.0
 
