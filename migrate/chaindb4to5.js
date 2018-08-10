@@ -52,11 +52,11 @@ async function removeKey(name, key) {
 
   console.log('Opened %s.', process.argv[2]);
   console.log('Checking version.');
-  await db.verify(layout.V.build(), 'chain', 4);
+  await db.verify(layout.V.encode(), 'chain', 4);
 
-  const t = bdb.key('t', ['hash256']);
-  const T = bdb.key('T', ['hash', 'hash256']);
-  const C = bdb.key('C', ['hash', 'hash256', 'uint32']);
+  const t = bdb.key('t', ['hhash256']);
+  const T = bdb.key('T', ['hhash', 'hhash256']);
+  const C = bdb.key('C', ['hhash', 'hhash256', 'uint32']);
 
   await removeKey('hash -> tx', t);
   await removeKey('addr -> tx', T);
@@ -66,8 +66,8 @@ async function removeKey(name, key) {
   await db.compactRange();
 
   console.log('Updating version to %d.', 5);
-  await db.del(layout.V.build());
-  await db.verify(layout.V.build(), 'chain', 5);
+  await db.del(layout.V.encode());
+  await db.verify(layout.V.encode(), 'chain', 5);
 
   await db.close();
 })().then(() => {
