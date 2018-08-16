@@ -200,7 +200,7 @@ describe('Address', function() {
 
     assert.strictEqual(
       err.message,
-      'Network mismatch for cashaddr address.'
+      'Invalid cashaddr checksum.'
     );
   });
 
