@@ -12,6 +12,9 @@ const FullNode = require('../lib/node/fullnode');
 const MTX = require('../lib/primitives/mtx');
 const TX = require('../lib/primitives/tx');
 const Address = require('../lib/primitives/address');
+const Peer = require('../lib/net/peer');
+const InvItem = require('../lib/primitives/invitem');
+const invTypes = InvItem.types;
 
 const node = new FullNode({
   memory: true,
@@ -117,10 +120,10 @@ describe('Node', function() {
 
       await chain.add(block2);
 
-      assert.strictEqual(chain.tip.hash, block1.hash('hex'));
+      assert.bufferEqual(chain.tip.hash, block1.hash());
 
-      tip1 = await chain.getEntry(block1.hash('hex'));
-      tip2 = await chain.getEntry(block2.hash('hex'));
+      tip1 = await chain.getEntry(block1.hash());
+      tip2 = await chain.getEntry(block2.hash());
 
       assert(tip1);
       assert(tip2);
@@ -164,7 +167,7 @@ describe('Node', function() {
     await chain.add(block);
 
     assert(forked);
-    assert.strictEqual(chain.tip.hash, block.hash('hex'));
+    assert.bufferEqual(chain.tip.hash, block.hash());
     assert(chain.tip.chainwork.gt(tip1.chainwork));
   });
 
@@ -192,9 +195,9 @@ describe('Node', function() {
 
     await chain.add(block);
 
-    const entry = await chain.getEntry(block.hash('hex'));
+    const entry = await chain.getEntry(block.hash());
     assert(entry);
-    assert.strictEqual(chain.tip.hash, entry.hash);
+    assert.bufferEqual(chain.tip.hash, entry.hash);
 
     const result = await chain.isMainChain(entry);
     assert(result);
@@ -248,7 +251,7 @@ describe('Node', function() {
     const tx = block2.txs[1];
     const output = Coin.fromTX(tx, 1, chain.height);
 
-    const coin = await chain.getCoin(tx.hash('hex'), 1);
+    const coin = await chain.getCoin(tx.hash(), 1);
 
     assert.bufferEqual(coin.toRaw(), output.toRaw());
   });
@@ -273,7 +276,14 @@ describe('Node', function() {
     {
       const tips = await chain.db.getTips();
 
-      assert.notStrictEqual(tips.indexOf(chain.tip.hash), -1);
+      let index = -1;
+
+      for (let i = 0; i < tips.length; i++) {
+        if (tips[i].equals(chain.tip.hash))
+          index = i;
+      }
+
+      assert.notStrictEqual(index, -1);
       assert.strictEqual(tips.length, 2);
     }
 
@@ -282,7 +292,14 @@ describe('Node', function() {
     {
       const tips = await chain.db.getTips();
 
-      assert.notStrictEqual(tips.indexOf(chain.tip.hash), -1);
+      let index = -1;
+
+      for (let i = 0; i < tips.length; i++) {
+        if (tips[i].equals(chain.tip.hash))
+          index = i;
+      }
+
+      assert.notStrictEqual(index, -1);
       assert.strictEqual(tips.length, 1);
     }
   });
@@ -533,7 +550,7 @@ describe('Node', function() {
 
     assert(!json.error);
     assert.strictEqual(json.result, null);
-    assert.strictEqual(node.chain.tip.hash, block.hash('hex'));
+    assert.bufferEqual(node.chain.tip.hash, block.hash());
   });
 
   it('should validate an address', async () => {
@@ -693,7 +710,7 @@ describe('Node', function() {
     await chain.add(block);
 
     const tx = block.txs[0];
-    const hash = tx.hash('hex');
+    const hash = tx.hash();
     const hasTX = await node.hasTX(hash);
 
     assert.strictEqual(hasTX, true);
@@ -735,6 +752,29 @@ describe('Node', function() {
     const coins = await node.getCoinsByAddress(addr);
     const coin = coins[0];
     assert.strictEqual(tx.txid(), coin.txid());
+  });
+
+  it('should broadcast a tx from inventory', async () => {
+    const rawTX1 =
+      '01000000011d06bce42b67f1de811a3444353fab5d400d82728a5bbf9c89978be37ad' +
+      '3eba9000000006a47304402200de4fd4ecc365ea90f93dbc85d219d7f1bd92ec87436' +
+      '48acb48b6602977e0b4302203ca2eeabed8e6f457234652a92711d66dd8eda71ed90f' +
+      'b6c49b3c12ce809a5d401210257654e1b0de2d8b08d514e51af5d770e9ef617ca2b25' +
+      '4d84dd26685fbc609ec3ffffffff0280969800000000001976a914a4ecde9642f8070' +
+      '241451c5851431be9b658a7fe88acc4506a94000000001976a914b9825cafc838c5b5' +
+      'befb70ecded7871d011af89d88ac00000000';
+    const tx1 = TX.fromRaw(rawTX1, 'hex');
+    const dummyPeer = Peer.fromOptions({
+      network: 'regtest',
+      agent: 'my-subversion',
+      hasWitness: () => {
+        return false;
+      }
+    });
+    const txItem = new InvItem(invTypes.TX, tx1.hash());
+    await node.sendTX(tx1); // add TX to inventory
+    const tx2 = node.pool.getBroadcasted(dummyPeer, txItem);
+    assert.strictEqual(tx1.txid(), tx2.txid());
   });
 
   it('should cleanup', async () => {
