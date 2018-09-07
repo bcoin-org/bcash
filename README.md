@@ -68,7 +68,7 @@ See LICENSE for more info.
 [changelog]: ./CHANGELOG.md
 
 
-[coverage-status-img]: https://codecov.io/gh/bcoin-org/bcash/badge.svg?branch=staging
-[coverage-status-url]: https://codecov.io/gh/bcoin-org/bcash?branch=staging
-[circleci-status-img]: https://circleci.com/gh/bcoin-org/bcash/tree/staging.svg?style=shield
-[circleci-status-url]: https://circleci.com/gh/bcoin-org/bcash/tree/staging
+[coverage-status-img]: https://codecov.io/gh/bcoin-org/bcash/badge.svg?branch=master
+[coverage-status-url]: https://codecov.io/gh/bcoin-org/bcash?branch=master
+[circleci-status-img]: https://circleci.com/gh/bcoin-org/bcash/tree/master.svg?style=shield
+[circleci-status-url]: https://circleci.com/gh/bcoin-org/bcash/tree/master
