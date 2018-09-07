@@ -69,6 +69,7 @@
     "docs": "jsdoc -c jsdoc.json",
     "lint": "eslint $(cat .eslintfiles) || exit 0",
     "lint-file": "eslint",
+    "lint-ci": "eslint $(cat .eslintfiles)",
     "test": "mocha --reporter spec test/*.js",
     "test-browser": "NODE_BACKEND=js mocha --reporter spec test/*.js",
     "test-file": "mocha --reporter spec",
