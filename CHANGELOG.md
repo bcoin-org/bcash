@@ -1,3 +1,16 @@
+# Bcash Release Notes & Changelog
+
+## v1.0.2
+
+Major changes include backports from bcoin:
+
+- `buffer-map` refactor
+- bug fixes
+
+### Notable Changes
+
+- Initial tagged bcash release.
+
 # Bcoin Release Notes & Changelog
 
 ## v1.x

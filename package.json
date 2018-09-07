@@ -1,6 +1,6 @@
 {
   "name": "bcash",
-  "version": "1.0.2-beta",
+  "version": "1.0.2",
   "description": "Bitcoin cash bike-shed",
   "license": "MIT",
   "repository": "git://github.com/bcoin-org/bcash.git",
@@ -85,5 +85,8 @@
     "./lib/workers/child": "./lib/workers/child-browser.js",
     "./lib/workers/parent": "./lib/workers/parent-browser.js",
     "./lib/bcash": "./lib/bcoin-browser.js"
+  },
+  "bcoin": {
+    "upstream": "15b024a3928ea8a54732bb2f5177ab1668468258"
   }
 }
