@@ -799,6 +799,56 @@ describe('Chain', function() {
     assert.strictEqual(await mineBlock(job), 'bad-blk-sigops');
   });
 
+  it('should fail to connect block with too many sigops in tx', async () => {
+    const job = await cpu.createJob();
+    const block = await chain.getBlock(chain.height - 110);
+
+    // create big transactions
+    // to have block bigger than 1 MB (20k sigop per MB limit)
+    const cb = block.txs[0];
+    for (let i = 2; i < 4; i++) {
+      const mtx = new MTX();
+
+      mtx.addTX(cb, i);
+      mtx.addOutput(wallet.getAddress(), 1);
+
+      const nulldataOutput = new Output();
+      const nulldataScript = nulldataOutput.script;
+
+      nulldataScript.pushOp(opcodes.OP_RETURN);
+      // half mb
+      nulldataScript.pushData(Buffer.alloc(2 ** 19));
+      nulldataScript.compile();
+
+      mtx.addOutput(nulldataOutput);
+
+      job.pushTX(mtx.toTX());
+    }
+
+    // create tx with more than 20k+ sigops
+    const mtx = new MTX();
+
+    mtx.addTX(block.txs[0], 4);
+
+    const output = new Output();
+    const script = output.script;
+
+    for (let i = 0; i < consensus.MAX_TX_SIGOPS; i++)
+      script.pushOp(opcodes.OP_CHECKSIG);
+
+    // one more
+    script.pushOp(opcodes.OP_CHECKSIG);
+
+    script.compile();
+
+    mtx.addOutput(output);
+
+    job.pushTX(mtx.toTX());
+    job.refresh();
+
+    assert.strictEqual(await mineBlock(job), 'bad-txn-sigops');
+  });
+
   it('should cleanup', async () => {
     await miner.close();
     await chain.close();
