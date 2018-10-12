@@ -21,7 +21,7 @@ const flags = [
 function isSuccess(stack, script, expected) {
   for (const flag of flags) {
     const input = stack.clone();
-    script.execute(input, flag | common.flags.VERIFY_MONOLITH_OPCODES);
+    script.execute(input, flag);
     assert.strictEqual(input.toString(), expected.toString());
   }
 }
@@ -31,7 +31,7 @@ function isError(stack, script, error) {
     const input = stack.clone();
     let err;
     try {
-      script.execute(input, flag | common.flags.VERIFY_MONOLITH_OPCODES);
+      script.execute(input, flag);
     } catch (e) {
       err = e;
     }
@@ -98,26 +98,6 @@ function testMinimalNegative(data, expected) {
 }
 
 describe('Monolith', function() {
-  it('should fail monolith when flag disabled', async () => {
-    const stack = new Stack();
-    const a = Buffer.from('ab', 'hex');
-    const b = Buffer.from('cd', 'hex');
-    stack.push(a);
-    stack.push(b);
-
-    const script = Script.fromString('OP_CAT');
-    let err;
-    try {
-      script.execute(stack,
-        common.flags.STANDARD_VERIFY_FLAGS &
-        ~common.flags.VERIFY_MONOLITH_OPCODES);
-    } catch (e) {
-      err = e;
-    }
-    assert.typeOf(err, 'error');
-    assert.strictEqual(err.code, 'DISABLED_OPCODE');
-  });
-
   it('should match monolith when flag enabled', async () => {
     const stack = new Stack();
     const a = Buffer.from('ab', 'hex');
@@ -127,7 +107,7 @@ describe('Monolith', function() {
 
     const script = Script.fromString('OP_CAT');
     const expected = new Stack([Buffer.from('abcd', 'hex')]);
-    script.execute(stack, common.flags.VERIFY_MONOLITH_OPCODES);
+    script.execute(stack);
     assert.strictEqual(stack.toString(), expected.toString());
   });
 
