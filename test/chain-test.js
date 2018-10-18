@@ -969,7 +969,7 @@ describe('Chain', function() {
       'mandatory-script-verify-flag-failed');
   });
 
-  it('should mine small tx', async () => {
+  it('should mine tx of size MIN_TX_SIZE', async () => {
     const [fund, spend] = await spendTX(consensus.MIN_TX_SIZE, true, true);
     const job = await cpu.createJob();
 
