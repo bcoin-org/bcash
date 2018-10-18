@@ -4,6 +4,7 @@
 'use strict';
 
 const assert = require('./util/assert');
+const random = require('bcrypto/lib/random');
 const consensus = require('../lib/protocol/consensus');
 const Coin = require('../lib/primitives/coin');
 const Script = require('../lib/script/script');
@@ -94,6 +95,62 @@ async function mineCSV(fund) {
   job.refresh();
 
   return await job.mineAsync();
+}
+
+/*
+ * @param {Number} size - Expected tx size
+ * @param {Boolean} [pushonly=false]
+ * @param {Boolean} [cleanstack=false]
+ * @returns {[MTX, MTX]} - Returns fund tx and desired tx.
+ */
+
+async function spendTX(size, pushonly, cleanstack) {
+  const fundTX = new MTX();
+
+  fundTX.addOutput({
+    script: [Opcode.fromOp(opcodes.OP_1)], // OP_TRUE
+    value: 0
+  });
+
+  await wallet.fund(fundTX);
+  wallet.sign(fundTX);
+
+  const extraOps = [];
+
+  if (pushonly === false) {
+    extraOps.push(
+      Opcode.fromOp(opcodes.OP_1),
+      Opcode.fromOp(opcodes.OP_DROP)
+    );
+  }
+
+  if (cleanstack === false)
+    extraOps.push(Opcode.fromOp(opcodes.OP_1));
+
+  const spend = new MTX();
+
+  // first one is our output (BIP69 sorted)
+  spend.addTX(fundTX, 0);
+
+  for (const op of extraOps)
+    spend.inputs[0].script.push(op);
+
+  spend.inputs[0].script.compile();
+
+  spend.addOutput({
+    script: [Opcode.fromOp(opcodes.OP_RETURN)],
+    value: 0
+  });
+
+  const txSize = spend.getSize();
+  const fillSize = size - txSize - 1;
+
+  if (fillSize > 0) {
+    spend.outputs[0].script.pushData(random.randomBytes(fillSize));
+    spend.outputs[0].script.compile();
+  }
+
+  return [fundTX, spend];
 }
 
 chain.on('connect', (entry, block) => {
@@ -556,7 +613,7 @@ describe('Chain', function() {
     assert.strictEqual(chain.height, 2636);
   });
 
-  it('should mine fail to connect too much size', async () => {
+  it('should fail to connect oversized block', async () => {
     const start = chain.height - 2000;
     const end = chain.height - 200;
     const job = await cpu.createJob();
@@ -615,7 +672,7 @@ describe('Chain', function() {
     const opreturns = Math.floor(fillSize / 81);
 
     for (let j = 0; j < perTxSigops; j++)
-      mtx.addOutput(wallet.getAddress(), 1);
+      mtx.addOutput(wallet.getReceive(), 1);
 
     for (let j = 0; j < opreturns; j++)
       mtx.addOutput({ script: OPRETURN });
@@ -847,6 +904,80 @@ describe('Chain', function() {
     job.refresh();
 
     assert.strictEqual(await mineBlock(job), 'bad-txn-sigops');
+  });
+
+  it('should activate magnetic anomaly', async () => {
+    const network = chain.network;
+
+    const mtp = await chain.getMedianTime(chain.tip);
+
+    // make sure we don't activate it in the past.
+    const activationTime = Math.max(network.now(), mtp + 1);
+
+    // modify activation time for test
+    network.block.magneticAnomalyActivationTime = activationTime;
+    assert.strictEqual(chain.state.hasMagneticAnomaly(), false);
+
+    // make sure we have MTP is more than activationTime
+    for (let i = 0; i < consensus.MEDIAN_TIMESPAN >>> 1; i++) {
+      const block = await cpu.mineBlock();
+      assert(await chain.add(block));
+    }
+
+    assert.strictEqual(chain.state.hasMagneticAnomaly(), true);
+  });
+
+  it('should not mine block with tx smaller than MIN_TX_SIZE', async () => {
+    // Send some money to script
+    const [fund, spend] = await spendTX(consensus.MIN_TX_SIZE - 1, true, true);
+
+    const job = await cpu.createJob();
+
+    // push fund tx
+    job.pushTX(fund.toTX(), fund.view);
+    job.pushTX(spend.toTX(), spend.view);
+    job.refresh();
+
+    assert.strictEqual(await mineBlock(job), 'bad-txns-undersize');
+  });
+
+  it('should not mine block without cleanstack', async () => {
+    // create tx failing with cleanstack
+    const [fund, spend] = await spendTX(consensus.MIN_TX_SIZE, true, false);
+
+    const job = await cpu.createJob();
+
+    job.pushTX(fund.toTX(), fund.view);
+    job.pushTX(spend.toTX(), spend.view);
+    job.refresh();
+
+    assert.strictEqual(await mineBlock(job),
+      'mandatory-script-verify-flag-failed');
+  });
+
+  it('should not mine block with non-pushonly opcodes', async () => {
+    // create tx failing with pushonly
+    const [fund, spend] = await spendTX(consensus.MIN_TX_SIZE, false, true);
+
+    const job = await cpu.createJob();
+
+    job.pushTX(fund.toTX(), fund.view);
+    job.pushTX(spend.toTX(), spend.view);
+    job.refresh();
+
+    assert.strictEqual(await mineBlock(job),
+      'mandatory-script-verify-flag-failed');
+  });
+
+  it('should mine tx of size MIN_TX_SIZE', async () => {
+    const [fund, spend] = await spendTX(consensus.MIN_TX_SIZE, true, true);
+    const job = await cpu.createJob();
+
+    job.pushTX(fund.toTX(), fund.view);
+    job.pushTX(spend.toTX(), spend.view);
+    job.refresh();
+
+    assert.strictEqual(await mineBlock(job), 'OK');
   });
 
   it('should cleanup', async () => {
