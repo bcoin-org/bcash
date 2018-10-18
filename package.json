@@ -52,7 +52,6 @@
     "n64": "~0.2.2"
   },
   "devDependencies": {
-    "istanbul": "^1.1.0-alpha.1",
     "mocha": "^5.2.0"
   },
   "main": "./lib/bcoin.js",
