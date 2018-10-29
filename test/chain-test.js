@@ -930,12 +930,12 @@ describe('Chain', function() {
   it('should not mine block with tx smaller than MIN_TX_SIZE', async () => {
     // Send some money to script
     const [fund, spend] = await spendTX(consensus.MIN_TX_SIZE - 1, true, true);
-
     const job = await cpu.createJob();
 
     // push fund tx
     job.pushTX(fund.toTX(), fund.view);
     job.pushTX(spend.toTX(), spend.view);
+    job.sort();
     job.refresh();
 
     assert.strictEqual(await mineBlock(job), 'bad-txns-undersize');
@@ -949,6 +949,7 @@ describe('Chain', function() {
 
     job.pushTX(fund.toTX(), fund.view);
     job.pushTX(spend.toTX(), spend.view);
+    job.sort();
     job.refresh();
 
     assert.strictEqual(await mineBlock(job),
@@ -963,6 +964,7 @@ describe('Chain', function() {
 
     job.pushTX(fund.toTX(), fund.view);
     job.pushTX(spend.toTX(), spend.view);
+    job.sort();
     job.refresh();
 
     assert.strictEqual(await mineBlock(job),
@@ -975,9 +977,22 @@ describe('Chain', function() {
 
     job.pushTX(fund.toTX(), fund.view);
     job.pushTX(spend.toTX(), spend.view);
+    job.sort();
     job.refresh();
 
     assert.strictEqual(await mineBlock(job), 'OK');
+  });
+
+  it('should not accept non-sorted block', async () => {
+    const txs = await spendTX(consensus.MAX_TX_SIZE, true, true);
+    const job = await cpu.createJob();
+
+    txs.sort((a, b) => a.txid() > b.txid() ? -1 : 1);
+
+    for (const tx of txs)
+      job.pushTX(tx.toTX(), tx.view);
+
+    job.refresh();
   });
 
   it('should cleanup', async () => {
