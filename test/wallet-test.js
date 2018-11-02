@@ -1669,4 +1669,3 @@ function sortTXs(txs) {
 
   return txs;
 }
-
