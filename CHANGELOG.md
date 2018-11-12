@@ -1,5 +1,21 @@
 # Bcash Release Notes & Changelog
 
+## v1.1.0
+
+This release includes:
+- Nov 15 upgrade 
+  - Implement and enforce canonical transaction order.
+  - Add OP_CHECKDATASIG and OP_CHECKDATASIGVERIFY.
+  - Enforce minimum transaction size of 100 bytes.
+  - Enforce VERIFY_SIGPUSHONLY.
+  - Enforce VERIFY_CLEANSTACK.
+- Remove monolith deployments
+- Update bcrypto
+- bug fixes
+
+Backports from bcoin:
+- bug fixes
+
 ## v1.0.2
 
 Major changes include backports from bcoin:
