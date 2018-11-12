@@ -22,6 +22,7 @@ function isSuccess(stack, script, expected) {
   for (const flag of flags) {
     const input = stack.clone();
     script.execute(input, flag);
+    // TODO: switch to assert.deepEqual
     assert.strictEqual(input.toString(), expected.toString());
   }
 }
