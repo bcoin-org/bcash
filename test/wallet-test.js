@@ -1575,8 +1575,97 @@ describe('Wallet', function() {
     });
   }
 
+  it('should accept canonically ordered txs', async () => {
+    const wallet = await wdb.create();
+    const txs = [];
+    const satoshis = 1000000;
+    const N = 100;
+
+    // spend coinbase txs
+    for (let i = 0; i < N; i++) {
+      const mtx = new MTX();
+
+      mtx.addInput(dummyInput());
+      mtx.addOutput(await wallet.receiveAddress(), satoshis);
+
+      txs.push(mtx.toTX());
+    }
+
+    sortTXs(txs);
+
+    await wdb.addBlock(nextBlock(wdb), txs);
+    const balance = await wallet.getBalance();
+
+    assert.strictEqual(balance.confirmed, satoshis * N);
+    assert.strictEqual(balance.unconfirmed, satoshis * N);
+  });
+
+  it('should accept canonically ordered dependent tx', async () => {
+    const alice = await wdb.create({
+      id: 'alice-111'
+    });
+    const bob = await wdb.create({
+      id: 'bob-2222'
+    });
+
+    // send some transactions to alice
+    const satoshis = 1000000;
+    const N = 100;
+
+    const aliceTX = new MTX();
+
+    aliceTX.addInput(dummyInput());
+    aliceTX.addOutput(await alice.receiveAddress(), satoshis * N);
+
+    await wdb.addBlock(nextBlock(wdb), [aliceTX.toTX()]);
+
+    const rollbackHeight = wdb.state.height;
+    const bobTXs = [];
+
+    for (let i = 0; i < N; i++) {
+      const mtx = new MTX();
+      const script = Script.fromNulldata(random.randomBytes(20));
+
+      mtx.addOutput(await bob.receiveAddress(), satoshis);
+      // randomize hashes
+      mtx.addOutput(script, 0);
+
+      await alice.fund(mtx, {
+        rate: 0
+      });
+
+      bobTXs.push(mtx.toTX());
+      await wdb.addBlock(nextBlock(wdb), [mtx.toTX()]);
+    }
+
+    // revert blocks and add all txs in one block
+    await wdb.rollback(rollbackHeight);
+
+    assert.strictEqual((await alice.getBalance()).confirmed, satoshis * N);
+    assert.strictEqual((await bob.getBalance()).confirmed, 0);
+
+    sortTXs(bobTXs);
+
+    const block = nextBlock(wdb);
+
+    await wdb.addBlock(block, bobTXs);
+
+    assert.strictEqual((await alice.getBalance()).confirmed, 0);
+    assert.strictEqual((await bob.getBalance()).confirmed, satoshis * N);
+
+    await wdb.removeBlock(block);
+
+    assert.strictEqual((await alice.getBalance()).confirmed, satoshis * N);
+    assert.strictEqual((await bob.getBalance()).confirmed, 0);
+  });
+
   it('should cleanup', async () => {
     consensus.COINBASE_MATURITY = 100;
-    // await wdb.close();
   });
 });
+
+function sortTXs(txs) {
+  txs.sort((a, b) => a.txid() < b.txid() ? -1 : 1);
+
+  return txs;
+}
