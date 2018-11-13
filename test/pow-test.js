@@ -167,8 +167,6 @@ describe('Difficulty', function() {
     const target = network.pow.limit.ushrn(4);
     let bits = consensus.toCompact(target);
 
-    // Enable DAA Deployment
-    chain.network.block.daaHeight = 0;
     const blocks = {};
 
     blocks[0] = new ChainEntry();
@@ -229,7 +227,7 @@ describe('Difficulty', function() {
     for (let j = 0; j < 10; i++, j++) {
       blocks[i] = getEntry(blocks[i-1], 550, bits);
       const nextBits =
-          await chain.getTarget(blocks[0].time, blocks[i]);
+          await chain.getCashTarget(blocks[0].time, blocks[i]);
 
       const currentTarget = consensus.fromCompact(bits);
       const nextTarget = consensus.fromCompact(nextBits);
@@ -248,7 +246,7 @@ describe('Difficulty', function() {
     for (let j = 0; j < 20; i++, j++) {
       blocks[i] = getEntry(blocks[i-1], 10, bits);
       const nextBits =
-          await chain.getTarget(blocks[0].time, blocks[i]);
+          await chain.getCashTarget(blocks[0].time, blocks[i]);
 
       const currentTarget = consensus.fromCompact(bits);
       const nextTarget = consensus.fromCompact(nextBits);
@@ -266,7 +264,7 @@ describe('Difficulty', function() {
     // We start to emit blocks significantly slower. The first block has no
     // impact.
     blocks[i] = getEntry(blocks[i-1], 6000, bits);
-    bits =  await chain.getTarget(blocks[0].time, blocks[i++]);
+    bits =  await chain.getCashTarget(blocks[0].time, blocks[i++]);
 
     // Check the actual value.
     assert.strictEqual(bits, 0x1c0d9222);
@@ -275,7 +273,7 @@ describe('Difficulty', function() {
     for (let j = 0; j < 93; i++, j++) {
       blocks[i] = getEntry(blocks[i-1], 6000, bits);
       const nextBits =
-          await chain.getTarget(blocks[0].time, blocks[i]);
+          await chain.getCashTarget(blocks[0].time, blocks[i]);
 
       const currentTarget = consensus.fromCompact(bits);
       const nextTarget = consensus.fromCompact(nextBits);
@@ -294,7 +292,7 @@ describe('Difficulty', function() {
     // Due to the window of time being bounded, next block's difficulty actually
     // gets harder.
     blocks[i] = getEntry(blocks[i-1], 6000, bits);
-    bits =  await chain.getTarget(blocks[0].time, blocks[i++]);
+    bits =  await chain.getCashTarget(blocks[0].time, blocks[i++]);
     assert.strictEqual(bits, 0x1c2ee9bf);
 
     // And goes down again. It takes a while due to the window being bounded and
@@ -302,7 +300,7 @@ describe('Difficulty', function() {
     for (let j = 0; j < 192; i++, j++) {
       blocks[i] = getEntry(blocks[i-1], 6000, bits);
       const nextBits =
-        await chain.getTarget(blocks[0].time, blocks[i]);
+        await chain.getCashTarget(blocks[0].time, blocks[i]);
 
       const currentTarget = consensus.fromCompact(bits);
       const nextTarget = consensus.fromCompact(nextBits);
