@@ -16,6 +16,7 @@ const MemWallet = require('./util/memwallet');
 const Network = require('../lib/protocol/network');
 const Output = require('../lib/primitives/output');
 const common = require('../lib/blockchain/common');
+const util = require('../lib/utils/util');
 const Opcode = require('../lib/script/opcode');
 const opcodes = Script.opcodes;
 
@@ -47,6 +48,8 @@ const cpu = miner.cpu;
 const wallet = new MemWallet({
   network
 });
+
+const MAA = network.block.magneticAnomalyActivationTime;
 
 let tip1 = null;
 let tip2 = null;
@@ -167,6 +170,10 @@ describe('Chain', function() {
   it('should open chain and miner', async () => {
     await chain.open();
     await miner.open();
+
+    // use some time in the future for maa activation
+    // test should not take more than HOUR
+    network.block.magneticAnomalyActivationTime = util.now() + 3600;
   });
 
   it('should add addrs to miner', async () => {
@@ -1036,6 +1043,7 @@ describe('Chain', function() {
   });
 
   it('should cleanup', async () => {
+    network.block.magneticAnomalyActivationTime = MAA;
     await miner.close();
     await chain.close();
   });

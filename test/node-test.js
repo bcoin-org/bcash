@@ -15,6 +15,7 @@ const Address = require('../lib/primitives/address');
 const Peer = require('../lib/net/peer');
 const InvItem = require('../lib/primitives/invitem');
 const invTypes = InvItem.types;
+const util = require('../lib/utils/util');
 
 const node = new FullNode({
   memory: true,
@@ -28,7 +29,11 @@ const node = new FullNode({
 
 const chain = node.chain;
 const miner = node.miner;
+const network = node.network;
 const {wdb} = node.require('walletdb');
+
+// Magnetic Anomaly Activation time
+const MAA = network.block.magneticAnomalyActivationTime;
 
 let wallet = null;
 let tip1 = null;
@@ -92,6 +97,8 @@ describe('Node', function() {
   it('should open chain and miner', async () => {
     miner.mempool = null;
     consensus.COINBASE_MATURITY = 0;
+
+    network.block.magneticAnomalyActivationTime = util.now() + 3600;
     await node.open();
   });
 
@@ -779,6 +786,7 @@ describe('Node', function() {
 
   it('should cleanup', async () => {
     consensus.COINBASE_MATURITY = 100;
+    network.block.magneticAnomalyActivationTime = MAA;
     await node.close();
   });
 });
