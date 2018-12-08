@@ -211,7 +211,7 @@ async function testP2SH() {
 }
 
 describe('Wallet', function() {
-  this.timeout(5000);
+  this.timeout(process.browser ? 20000 : 5000);
 
   before(async () => {
     await wdb.open();
