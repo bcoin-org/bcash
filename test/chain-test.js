@@ -622,6 +622,7 @@ describe('Chain', function() {
 
   if (process.browser)
     return;
+
   it('should fail to connect oversized block', async () => {
     const start = chain.height - 2000;
     const end = chain.height - 200;
