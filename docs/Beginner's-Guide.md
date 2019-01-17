@@ -5,8 +5,8 @@ Bcash is an _alternative_ implementation of the bitcoin protocol, written in nod
 ## Requirements
 
 - Linux, OSX, or Windows (\*) (\*\*)
-- node.js >=v7.6.0
-- npm >=v4.0.0
+- node.js >=v8.14.0
+- npm >=v6.4.1
 - python2 (for node-gyp)
 - gcc/g++ (for leveldb and secp256k1)
 - git (optional, see below)
@@ -32,6 +32,9 @@ $ git clone git://github.com/bcoin-org/bcash.git
 $ cd bcash
 $ npm install -g --production
 ```
+
+**Note:** Dependencies are checked for integrity using `package-lock.json`. However `npm` _will not_ make these checks with `npm install -g` and it will link your installation globally so that `bcash` is in your path _(e.g. $ bcash)_.
+
 ### Installing via Docker
 
 Check [bcash-docker](https://github.com/bcoin-org/bcash-docker)
