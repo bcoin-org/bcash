@@ -1,3 +1,7 @@
+## :warning: IMPORTANT: This repository is not currently being actively maintained.
+#### It has not been updated for compatibility with the [May 15 2019 Bitcoin Cash hard fork.](https://github.com/bitcoincashorg/bitcoincash.org/blob/master/spec/2019-05-15-upgrade.md) Although SPV mode and other non-full-consensus modules in this library may still operate correctly, use at your own risk. Forks of this repository may exist that have been adapted to the latest network upgrade, but those changes will not have been reviewed by bcoin organization members.
+
+
 # Bcash
 
 [![CircleCi Status][circleci-status-img]][circleci-status-url]
